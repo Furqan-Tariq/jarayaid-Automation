@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Plus, Edit2, Trash2, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -25,6 +25,17 @@ interface Country {
   welcome: string
   goodbye: string
   whatsapp: string
+}
+
+type SourceRow = {
+  source: string
+  newsSource: string
+  active: boolean
+  articleCount: number
+  sequence: number
+  type: "Website" | "Newspaper"
+  newsStart: string
+  introMusic?: File | null
 }
 
 export default function CountriesSources() {
@@ -81,6 +92,65 @@ export default function CountriesSources() {
     },
   ])
 
+  // --- New: Sources view state ---
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null)
+
+  // Mock per-country sources
+  const [countrySources, setCountrySources] = useState<Record<number, SourceRow[]>>({
+    1: [
+      {
+        source: "Al Jazira",
+        newsSource: "aljazeera.com",
+        active: true,
+        articleCount: 2,
+        sequence: 1,
+        type: "Website",
+        newsStart: "",
+        introMusic: null,
+      },
+      {
+        source: "Alarabiya",
+        newsSource: "alarabiya.com",
+        active: true,
+        articleCount: 3,
+        sequence: 2,
+        type: "Newspaper",
+        newsStart: "",
+        introMusic: null,
+      },
+    ],
+    2: [
+      {
+        source: "Egypt Today",
+        newsSource: "egypttoday.com",
+        active: true,
+        articleCount: 2,
+        sequence: 1,
+        type: "Website",
+        newsStart: "",
+        introMusic: null,
+      },
+    ],
+    3: [
+      {
+        source: "Arab News",
+        newsSource: "arabnews.com",
+        active: true,
+        articleCount: 2,
+        sequence: 1,
+        type: "Website",
+        newsStart: "",
+        introMusic: null,
+      },
+    ],
+    4: [],
+    5: [],
+  })
+
+  const getSelectedCountry = () => countries.find((c) => c.id === selectedCountryId) || null
+  const activeSourcesCount = (id: number) =>
+    (countrySources[id] || []).filter((s) => s.active).length
+
   const [isOpen, setIsOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
@@ -116,6 +186,20 @@ export default function CountriesSources() {
     }
     setIsOpen(true)
   }
+
+  const updateSourceField = <K extends keyof SourceRow>(
+    countryId: number,
+    rowIdx: number,
+    field: K,
+    value: SourceRow[K]
+  ) => {
+    setCountrySources(prev => {
+      const rows = [...(prev[countryId] || [])]
+      rows[rowIdx] = { ...rows[rowIdx], [field]: value }
+      return { ...prev, [countryId]: rows }
+    })
+  }
+
 
   const handleSave = () => {
     if (!formData.name || !formData.slug) {
@@ -155,6 +239,15 @@ export default function CountriesSources() {
     alert(`Mock schedule clicked:\n${country} → ${platform}`)
   }
 
+  // Helpers to toggle source status (mock)
+  const toggleSourceActive = (countryId: number, rowIdx: number) => {
+    setCountrySources((prev) => {
+      const rows = [...(prev[countryId] || [])]
+      rows[rowIdx] = { ...rows[rowIdx], active: !rows[rowIdx].active }
+      return { ...prev, [countryId]: rows }
+    })
+  }
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
@@ -165,11 +258,9 @@ export default function CountriesSources() {
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            {/* onClick={() => handleOpenDialog()} */}
-            <Button disabled className="gap-2 bg-accent hover:bg-accent/90">
-              {/* <Plus size={18} /> */}
-              {countries.length} Countries
-              
+            <Button onClick={() => handleOpenDialog()} className="gap-2 bg-accent hover:bg-accent/90">
+              <Plus size={18} />
+              Add Country
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -251,202 +342,284 @@ export default function CountriesSources() {
         </Dialog>
       </div>
 
-{/* Countries Table (wide + horizontal scroll, with Add button, editable fields, and Source column) */}
-<Card className="bg-card">
-  <CardHeader className="flex flex-row items-center justify-between">
-    <CardTitle>Countries</CardTitle>
-    <Button
-      onClick={() => handleOpenDialog()}
-      className="gap-2 bg-accent hover:bg-accent/90"
-    >
-      <Plus size={18} />
-      Add Country
-    </Button>
-  </CardHeader>
+      {/* --- CONDITIONAL: show Countries card OR Sources card --- */}
+      {selectedCountryId === null ? (
+        <>
+          {/* Countries Table */}
+          <Card className="bg-card">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Countries</CardTitle>
+              <div className="text-xs text-muted-foreground">{countries.length} Countries</div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1400px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-semibold text-foreground w-12"></th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Country</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Slug</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Welcome Message</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Goodbye Message</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Source</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {countries.map((country) => (
+                      <tr key={country.id} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-3 px-4">
+                          <Switch checked={country.enabled} onCheckedChange={() => toggleCountry(country.id)} />
+                        </td>
+                        <td className="py-3 px-4 text-foreground font-medium">{country.name}</td>
+                        <td className="py-3 px-4 text-muted-foreground text-xs">{country.slug}</td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => toggleStatus(country.id)}
+                            className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                              country.status === "Manual"
+                                ? "bg-accent text-accent-foreground"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {country.status}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Input
+                            value={country.welcome}
+                            placeholder={country.welcome}
+                            onChange={(e) =>
+                              setCountries(
+                                countries.map((c) => (c.id === country.id ? { ...c, welcome: e.target.value } : c))
+                              )
+                            }
+                            className="h-9 w-[320px]"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Input
+                            value={country.goodbye}
+                            placeholder={country.goodbye}
+                            onChange={(e) =>
+                              setCountries(
+                                countries.map((c) => (c.id === country.id ? { ...c, goodbye: e.target.value } : c))
+                              )
+                            }
+                            className="h-9 w-[320px]"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Button
+                            className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground text-xs px-3 py-1"
+                            onClick={() => setSelectedCountryId(country.id)}
+                          >
+                            View
+                          </Button>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDialog(country)}
+                              className="gap-1"
+                            >
+                              <Edit2 size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(country.id)}
+                              className="gap-1 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
-  <CardContent>
-    {/* Horizontal slider */}
-    <div className="overflow-x-auto">
-      {/* Make table naturally wide so it scrolls instead of compressing */}
-      <table className="w-full min-w-[1400px] text-sm">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-semibold text-foreground w-12"></th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Country</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Slug</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Welcome Message</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Goodbye Message</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Source</th>
-            <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
-          </tr>
-        </thead>
+          {/* Quick Scheduler (scrollable both ways, sticky header) */}
+          <Card className="bg-card">
+            <CardHeader>
+              <CardTitle>Quick Scheduler</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+                <table className="w-full min-w-[1100px] table-fixed text-sm">
+                  <colgroup>
+                    <col className="w-[180px]" />
+                    {platforms.map((p) => (
+                      <col key={p} className="w-[180px]" />
+                    ))}
+                  </colgroup>
 
-        <tbody>
-          {countries.map((country) => (
-            <tr key={country.id} className="border-b border-border hover:bg-muted/50">
-              <td className="py-3 px-4">
-                <Switch
-                  checked={country.enabled}
-                  onCheckedChange={() => toggleCountry(country.id)}
-                />
-              </td>
+                  <thead className="sticky top-0 bg-card z-10">
+                    <tr className="border-b border-border">
+                      <th className="py-3 px-4 text-left font-semibold">Country</th>
+                      {platforms.map((p) => (
+                        <th key={p} className="py-3 px-4 text-center font-semibold">
+                          {p}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
 
-              <td className="py-3 px-4 text-foreground font-medium">{country.name}</td>
-              <td className="py-3 px-4 text-muted-foreground text-xs">{country.slug}</td>
+                  <tbody>
+                    {countries.map((c) => (
+                      <tr key={c.id} className="border-b border-border align-top text-center">
+                        <td className="py-4 px-4">
+                          <div className="w-full h-[180px] rounded-2xl bg-accent text-accent-foreground flex items-center justify-center font-semibold">
+                            {c.name}
+                          </div>
+                        </td>
+                        {platforms.map((p) => (
+                          <td key={p} className="py-4 px-4">
+                            <div className="w-full h-[180px] flex flex-col items-center justify-center gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="w-28"
+                                onClick={() => handleMockSchedule(c.name, p)}
+                              >
+                                Schedule
+                              </Button>
+                              <Input type="time" className="h-9 w-28 text-center" onChange={() => {}} />
+                              <div className="flex border border-border rounded-md overflow-hidden">
+                                <button className="px-3 py-1 text-xs bg-muted hover:bg-muted/80">AM</button>
+                                <button className="px-3 py-1 text-xs hover:bg-muted">PM</button>
+                              </div>
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        // --- Sources card (shown after clicking "View") ---
+        <Card className="bg-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => setSelectedCountryId(null)}
+              >
+                <ArrowLeft size={16} />
+                Back
+              </Button>
+              <CardTitle>
+                {getSelectedCountry()?.name} – Sources
+              </CardTitle>
+            </div>
+            <div className="text-xs px-3 py-1 rounded bg-muted text-foreground">
+              {activeSourcesCount(selectedCountryId!)} Sources
+            </div>
+          </CardHeader>
 
-              <td className="py-3 px-4">
-                <button
-                  onClick={() => toggleStatus(country.id)}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                    country.status === "Manual"
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {country.status}
-                </button>
-              </td>
-
-              {/* Editable Welcome Message (full-size input, wider cell) */}
-              <td className="py-3 px-4">
-                <Input
-                  value={country.welcome}
-                  placeholder={country.welcome}
-                  onChange={(e) =>
-                    setCountries(
-                      countries.map((c) =>
-                        c.id === country.id ? { ...c, welcome: e.target.value } : c
-                      )
-                    )
-                  }
-                  className="h-9 w-[320px]"
-                />
-              </td>
-
-              {/* Editable Goodbye Message (full-size input, wider cell) */}
-              <td className="py-3 px-4">
-                <Input
-                  value={country.goodbye}
-                  placeholder={country.goodbye}
-                  onChange={(e) =>
-                    setCountries(
-                      countries.map((c) =>
-                        c.id === country.id ? { ...c, goodbye: e.target.value } : c
-                      )
-                    )
-                  }
-                  className="h-9 w-[320px]"
-                />
-              </td>
-
-              {/* Source Column (display-only button styled like Add Country) */}
-              <td className="py-3 px-4">
-                <Button
-                  className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground text-xs px-3 py-1"
-                  onClick={() => {}}
-                >
-                  View
-                </Button>
-              </td>
-
-              {/* Actions */}
-              <td className="py-3 px-4">
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleOpenDialog(country)}
-                    className="gap-1"
-                  >
-                    <Edit2 size={16} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(country.id)}
-                    className="gap-1 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </CardContent>
-</Card>
-
-
-
-
-{/* Quick Scheduler (scrollable horizontally + vertically) */}
-<Card className="bg-card">
-  <CardHeader>
-    <CardTitle>Quick Scheduler</CardTitle>
-  </CardHeader>
-  <CardContent>
-    {/* Both scroll directions + sticky header */}
-    <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-      <table className="w-full min-w-[1100px] table-fixed text-sm">
-        <colgroup>
-          <col className="w-[180px]" />
-          {platforms.map((p) => (
-            <col key={p} className="w-[180px]" />
-          ))}
-        </colgroup>
-
-        <thead className="sticky top-0 bg-card z-10">
-          <tr className="border-b border-border">
-            <th className="py-3 px-4 text-left font-semibold">Country</th>
-            {platforms.map((p) => (
-              <th key={p} className="py-3 px-4 text-center font-semibold">
-                {p}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {countries.map((c) => (
-            <tr key={c.id} className="border-b border-border align-top text-center">
-              <td className="py-4 px-4">
-                <div className="w-full h-[180px] rounded-2xl bg-accent text-accent-foreground flex items-center justify-center font-semibold">
-                  {c.name}
-                </div>
-              </td>
-
-              {platforms.map((p) => (
-                <td key={p} className="py-4 px-4">
-                  <div className="w-full h-[180px] flex flex-col items-center justify-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-28"
-                      onClick={() => handleMockSchedule(c.name, p)}
-                    >
-                      Schedule
-                    </Button>
-                    <Input type="time" className="h-9 w-28 text-center" onChange={() => {}} />
-                    <div className="flex border border-border rounded-md overflow-hidden">
-                      <button className="px-3 py-1 text-xs bg-muted hover:bg-muted/80">AM</button>
-                      <button className="px-3 py-1 text-xs hover:bg-muted">PM</button>
-                    </div>
-                  </div>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </CardContent>
-</Card>
-
-
-
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-semibold">Source</th>
+                    <th className="text-left py-3 px-4 font-semibold">News Source</th>
+                    <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold">Article Count</th>
+                    <th className="text-left py-3 px-4 font-semibold">Sequence</th>
+                    <th className="text-left py-3 px-4 font-semibold">Type</th>
+                    <th className="text-left py-3 px-4 font-semibold">News Start</th>
+                    <th className="text-left py-3 px-4 font-semibold">Intro Music</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(countrySources[selectedCountryId!] || []).map((row, idx) => (
+                    <tr key={idx} className="border-b border-border">
+                      <td className="py-3 px-4">{row.source}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{row.newsSource}</td>
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleSourceActive(selectedCountryId!, idx)}
+                          className={`px-3 py-1 rounded text-xs font-semibold ${
+                            row.active ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {row.active ? "Active" : "Inactive"}
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Input
+                          type="number"
+                          className="h-8 w-20"
+                          value={row.articleCount}
+                          onChange={(e) =>
+                            updateSourceField(selectedCountryId!, idx, "articleCount", Number(e.target.value) || 0)
+                          }
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Input
+                          type="number"
+                          className="h-8 w-20"
+                          value={row.sequence}
+                          onChange={(e) =>
+                            updateSourceField(selectedCountryId!, idx, "sequence", Number(e.target.value) || 0)
+                          }
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <select
+                          className="w-36 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                          value={row.type}
+                          onChange={() => {}}
+                        >
+                          <option>Website</option>
+                          <option>Newspaper</option>
+                        </select>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Input
+                          placeholder="Starting message"
+                          className="h-8 w-44"
+                          value={row.newsStart}
+                          onChange={(e) =>
+                            updateSourceField(selectedCountryId!, idx, "newsStart", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <input type="file" className="text-xs" onChange={() => {}} />
+                      </td>
+                    </tr>
+                  ))}
+                  {/* empty state */}
+                  {(countrySources[selectedCountryId!] || []).length === 0 && (
+                    <tr>
+                      <td className="py-6 px-4 text-muted-foreground" colSpan={8}>
+                        No sources yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
