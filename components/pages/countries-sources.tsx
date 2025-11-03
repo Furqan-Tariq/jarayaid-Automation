@@ -585,10 +585,12 @@ export default function CountriesSources() {
                         <select
                           className="w-36 px-3 py-2 border border-border rounded-md bg-background text-foreground"
                           value={row.type}
-                          onChange={() => {}}
+                          onChange={(e) =>
+                            updateSourceField(selectedCountryId!, idx, "type", e.target.value as "Website" | "Newspaper")
+                          }
                         >
-                          <option>Website</option>
-                          <option>Newspaper</option>
+                          <option value="Website">Website</option>
+                          <option value="Newspaper">Newspaper</option>
                         </select>
                       </td>
                       <td className="py-3 px-4">
