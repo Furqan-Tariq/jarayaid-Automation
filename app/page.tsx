@@ -8,6 +8,7 @@ import Publishing from "@/components/pages/publishing"
 import ScriptGeneration from "@/components/pages/script-generation"
 import Sponsors from "@/components/pages/sponsors"
 import Analytics from "@/components/pages/analytics"
+import SocialRotations from "@/components/pages/social-rotations"
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState("dashboard")
@@ -26,6 +27,8 @@ export default function Home() {
         return <Publishing />
       case "analytics":
         return <Analytics />
+      case "social-rotations":
+        return <SocialRotations />
       default:
         return <Dashboard />
     }

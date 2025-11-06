@@ -16,6 +16,7 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
     { id: "sponsors", label: "Sponsors", icon: Users },
     { id: "script-generation", label: "Script Generation", icon: Wand2 },
     { id: "publishing", label: "Publishing", icon: Send },
+    { id: "social-rotations", label: "Social Rotations", icon: Send },
   ]
 
   return (
