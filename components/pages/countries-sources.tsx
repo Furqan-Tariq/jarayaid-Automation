@@ -257,84 +257,62 @@ export default function CountriesSources() {
               Add Country
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Country" : "Add New Country"}</DialogTitle>
-              <DialogDescription>
-                {editingId ? "Update country configuration" : "Create a new country entry"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">Country Name *</label>
-                  <Input
-                    placeholder="e.g., Lebanon"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Slug *</label>
-                  <Input
-                    placeholder="e.g., /lebanon"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "Manual" | "Auto" })}
-                  className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
-                >
-                  <option value="Manual">Manual</option>
-                  <option value="Auto">Auto</option>
-                </select>
-              </div>
+<DialogContent className="max-w-2xl">
+  <DialogHeader>
+    <DialogTitle>{editingId ? "Edit Country" : "Add New Country"}</DialogTitle>
+    <DialogDescription>
+      {editingId ? "Update country configuration" : "Create a new country entry"}
+    </DialogDescription>
+  </DialogHeader>
 
-              {/* Keeping these in the dialog is fine; you asked to remove only the table columns */}
-              <div>
-                <label className="text-sm font-medium text-foreground">Welcome Message</label>
-                <Textarea
-                  placeholder="Welcome message for this country"
-                  value={formData.welcome}
-                  onChange={(e) => setFormData({ ...formData, welcome: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Goodbye Message</label>
-                <Textarea
-                  placeholder="Goodbye message for this country"
-                  value={formData.goodbye}
-                  onChange={(e) => setFormData({ ...formData, goodbye: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">WhatsApp Title</label>
-                <Input
-                  placeholder="WhatsApp title"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex gap-2 justify-end pt-4">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} className="bg-accent hover:bg-accent/90">
-                  {editingId ? "Update" : "Add"} Country
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-foreground">Country Name *</label>
+        <Input
+          placeholder="e.g., Lebanon"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Slug *</label>
+        <Input
+          placeholder="e.g., /lebanon"
+          value={formData.slug}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+          className="mt-1"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="text-sm font-medium text-foreground">Status</label>
+      <select
+        value={formData.status}
+        onChange={(e) =>
+          setFormData({ ...formData, status: e.target.value as "Manual" | "Auto" })
+        }
+        className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+      >
+        <option value="Manual">Manual</option>
+        <option value="Auto">Auto</option>
+      </select>
+    </div>
+
+    <div className="flex gap-2 justify-end pt-4">
+      <Button variant="outline" onClick={() => setIsOpen(false)}>
+        Cancel
+      </Button>
+      <Button onClick={handleSave} className="bg-accent hover:bg-accent/90">
+        {editingId ? "Update" : "Add"} Country
+      </Button>
+    </div>
+  </div>
+</DialogContent>
+
+
         </Dialog>
       </div>
 
