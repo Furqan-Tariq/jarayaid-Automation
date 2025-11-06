@@ -92,7 +92,7 @@ export default function CountriesSources() {
     },
   ])
 
-  // --- New: Sources view state ---
+  // Sources view toggle
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null)
 
   // Mock per-country sources
@@ -200,19 +200,16 @@ export default function CountriesSources() {
     })
   }
 
-
   const handleSave = () => {
     if (!formData.name || !formData.slug) {
       alert("Please fill in all required fields")
       return
     }
-
     if (editingId) {
       setCountries(countries.map((c) => (c.id === editingId ? { ...c, ...formData } : c)))
     } else {
       setCountries([...countries, { id: Date.now(), enabled: false, ...formData }])
     }
-
     setIsOpen(false)
   }
 
@@ -230,16 +227,13 @@ export default function CountriesSources() {
     setCountries(countries.map((c) => (c.id === id ? { ...c, status: c.status === "Manual" ? "Auto" : "Manual" } : c)))
   }
 
-  // -------------------------
-  // QUICK SCHEDULER (UI only)
-  // -------------------------
+  // Quick Scheduler (UI only)
   const platforms = ["YouTube Playlist 1", "YouTube Playlist 2", "YouTube Playlist 3", "Facebook"] as const
-
   const handleMockSchedule = (country: string, platform: string) => {
     alert(`Mock schedule clicked:\n${country} → ${platform}`)
   }
 
-  // Helpers to toggle source status (mock)
+  // Toggle source active pill
   const toggleSourceActive = (countryId: number, rowIdx: number) => {
     setCountrySources((prev) => {
       const rows = [...(prev[countryId] || [])]
@@ -302,6 +296,8 @@ export default function CountriesSources() {
                   <option value="Auto">Auto</option>
                 </select>
               </div>
+
+              {/* Keeping these in the dialog is fine; you asked to remove only the table columns */}
               <div>
                 <label className="text-sm font-medium text-foreground">Welcome Message</label>
                 <Textarea
@@ -342,10 +338,10 @@ export default function CountriesSources() {
         </Dialog>
       </div>
 
-      {/* --- CONDITIONAL: show Countries card OR Sources card --- */}
+      {/* Countries card OR Sources card */}
       {selectedCountryId === null ? (
         <>
-          {/* Countries Table */}
+          {/* Countries Table (Welcome/Goodbye columns removed) */}
           <Card className="bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Countries</CardTitle>
@@ -353,17 +349,15 @@ export default function CountriesSources() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1400px] text-sm">
+                <table className="w-full min-w-[1100px] text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold text-foreground w-12"></th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Country</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Slug</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Welcome Message</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Goodbye Message</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Source</th>
-                      <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
+                      <th className="text-left py-3 px-4 font-semibold w-12"></th>
+                      <th className="text-left py-3 px-4 font-semibold">Country</th>
+                      <th className="text-left py-3 px-4 font-semibold">Slug</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold">Source</th>
+                      <th className="text-left py-3 px-4 font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -372,7 +366,7 @@ export default function CountriesSources() {
                         <td className="py-3 px-4">
                           <Switch checked={country.enabled} onCheckedChange={() => toggleCountry(country.id)} />
                         </td>
-                        <td className="py-3 px-4 text-foreground font-medium">{country.name}</td>
+                        <td className="py-3 px-4 font-medium">{country.name}</td>
                         <td className="py-3 px-4 text-muted-foreground text-xs">{country.slug}</td>
                         <td className="py-3 px-4">
                           <button
@@ -385,30 +379,6 @@ export default function CountriesSources() {
                           >
                             {country.status}
                           </button>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Input
-                            value={country.welcome}
-                            placeholder={country.welcome}
-                            onChange={(e) =>
-                              setCountries(
-                                countries.map((c) => (c.id === country.id ? { ...c, welcome: e.target.value } : c))
-                              )
-                            }
-                            className="h-9 w-[320px]"
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <Input
-                            value={country.goodbye}
-                            placeholder={country.goodbye}
-                            onChange={(e) =>
-                              setCountries(
-                                countries.map((c) => (c.id === country.id ? { ...c, goodbye: e.target.value } : c))
-                              )
-                            }
-                            className="h-9 w-[320px]"
-                          />
                         </td>
                         <td className="py-3 px-4">
                           <Button
@@ -446,7 +416,7 @@ export default function CountriesSources() {
             </CardContent>
           </Card>
 
-          {/* Quick Scheduler (scrollable both ways, sticky header) */}
+          {/* Quick Scheduler */}
           <Card className="bg-card">
             <CardHeader>
               <CardTitle>Quick Scheduler</CardTitle>
@@ -460,7 +430,6 @@ export default function CountriesSources() {
                       <col key={p} className="w-[180px]" />
                     ))}
                   </colgroup>
-
                   <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
                       <th className="py-3 px-4 text-left font-semibold">Country</th>
@@ -471,7 +440,6 @@ export default function CountriesSources() {
                       ))}
                     </tr>
                   </thead>
-
                   <tbody>
                     {countries.map((c) => (
                       <tr key={c.id} className="border-b border-border align-top text-center">
@@ -508,7 +476,7 @@ export default function CountriesSources() {
           </Card>
         </>
       ) : (
-        // --- Sources card (shown after clicking "View") ---
+        // Sources Card (News Start removed)
         <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
@@ -521,18 +489,15 @@ export default function CountriesSources() {
                 <ArrowLeft size={16} />
                 Back
               </Button>
-              <CardTitle>
-                {getSelectedCountry()?.name} – Sources
-              </CardTitle>
+              <CardTitle>{getSelectedCountry()?.name} – Sources</CardTitle>
             </div>
             <div className="text-xs px-3 py-1 rounded bg-muted text-foreground">
               {activeSourcesCount(selectedCountryId!)} Sources
             </div>
           </CardHeader>
-
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-sm">
+              <table className="w-full min-w-[1000px] text-sm">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-semibold">Source</th>
@@ -541,7 +506,6 @@ export default function CountriesSources() {
                     <th className="text-left py-3 px-4 font-semibold">Article Count</th>
                     <th className="text-left py-3 px-4 font-semibold">Sequence</th>
                     <th className="text-left py-3 px-4 font-semibold">Type</th>
-                    <th className="text-left py-3 px-4 font-semibold">News Start</th>
                     <th className="text-left py-3 px-4 font-semibold">Intro Music</th>
                   </tr>
                 </thead>
@@ -594,24 +558,14 @@ export default function CountriesSources() {
                         </select>
                       </td>
                       <td className="py-3 px-4">
-                        <Input
-                          placeholder="Starting message"
-                          className="h-8 w-44"
-                          value={row.newsStart}
-                          onChange={(e) =>
-                            updateSourceField(selectedCountryId!, idx, "newsStart", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="py-3 px-4">
                         <input type="file" className="text-xs" onChange={() => {}} />
                       </td>
                     </tr>
                   ))}
-                  {/* empty state */}
+
                   {(countrySources[selectedCountryId!] || []).length === 0 && (
                     <tr>
-                      <td className="py-6 px-4 text-muted-foreground" colSpan={8}>
+                      <td className="py-6 px-4 text-muted-foreground" colSpan={7}>
                         No sources yet.
                       </td>
                     </tr>
