@@ -5,7 +5,6 @@ import { Plus, Edit2, Trash2, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -22,10 +21,10 @@ interface Country {
   slug: string
   enabled: boolean
   status: "Manual" | "Auto"
-  welcome: string
-  goodbye: string
-  whatsapp: string
 }
+
+// NEW: JoiningWords type
+type JoiningWords = "Mentioned" | "Notified" | "Updated"
 
 type SourceRow = {
   source: string
@@ -34,62 +33,18 @@ type SourceRow = {
   articleCount: number
   sequence: number
   type: "Website" | "Newspaper"
-  newsStart: string
+  // NEW: joiningWords column value per row
+  joiningWords: JoiningWords
   introMusic?: File | null
 }
 
 export default function CountriesSources() {
   const [countries, setCountries] = useState<Country[]>([
-    {
-      id: 1,
-      name: "Lebanon",
-      slug: "/lebanon",
-      enabled: false,
-      status: "Manual",
-      welcome: "Welcome to Lebanon news bulletin",
-      goodbye: "Thank you for watching",
-      whatsapp: "Lebanon News",
-    },
-    {
-      id: 2,
-      name: "Egypt",
-      slug: "/egypt",
-      enabled: false,
-      status: "Auto",
-      welcome: "Welcome to Egypt news bulletin",
-      goodbye: "Thank you for watching",
-      whatsapp: "Egypt News",
-    },
-    {
-      id: 3,
-      name: "Saudi Arabia",
-      slug: "/saudi-arabia",
-      enabled: false,
-      status: "Manual",
-      welcome: "Welcome to Saudi Arabia news bulletin",
-      goodbye: "Thank you for watching",
-      whatsapp: "Saudi Arabia News",
-    },
-    {
-      id: 4,
-      name: "UAE",
-      slug: "/uae",
-      enabled: false,
-      status: "Manual",
-      welcome: "Welcome to UAE news bulletin",
-      goodbye: "Thank you for watching",
-      whatsapp: "UAE News",
-    },
-    {
-      id: 5,
-      name: "Qatar",
-      slug: "/qatar",
-      enabled: false,
-      status: "Auto",
-      welcome: "Welcome to Qatar news bulletin",
-      goodbye: "Thank you for watching",
-      whatsapp: "Qatar News",
-    },
+    { id: 1, name: "Lebanon", slug: "/lebanon", enabled: false, status: "Manual" },
+    { id: 2, name: "Egypt", slug: "/egypt", enabled: false, status: "Auto" },
+    { id: 3, name: "Saudi Arabia", slug: "/saudi-arabia", enabled: false, status: "Manual" },
+    { id: 4, name: "UAE", slug: "/uae", enabled: false, status: "Manual" },
+    { id: 5, name: "Qatar", slug: "/qatar", enabled: false, status: "Auto" },
   ])
 
   // Sources view toggle
@@ -105,7 +60,7 @@ export default function CountriesSources() {
         articleCount: 2,
         sequence: 1,
         type: "Website",
-        newsStart: "",
+        joiningWords: "Mentioned",
         introMusic: null,
       },
       {
@@ -115,7 +70,7 @@ export default function CountriesSources() {
         articleCount: 3,
         sequence: 2,
         type: "Newspaper",
-        newsStart: "",
+        joiningWords: "Mentioned",
         introMusic: null,
       },
     ],
@@ -127,7 +82,7 @@ export default function CountriesSources() {
         articleCount: 2,
         sequence: 1,
         type: "Website",
-        newsStart: "",
+        joiningWords: "Mentioned",
         introMusic: null,
       },
     ],
@@ -139,7 +94,7 @@ export default function CountriesSources() {
         articleCount: 2,
         sequence: 1,
         type: "Website",
-        newsStart: "",
+        joiningWords: "Mentioned",
         introMusic: null,
       },
     ],
@@ -157,9 +112,6 @@ export default function CountriesSources() {
     name: "",
     slug: "",
     status: "Manual" as const,
-    welcome: "",
-    goodbye: "",
-    whatsapp: "",
   })
 
   const handleOpenDialog = (country?: Country) => {
@@ -169,9 +121,6 @@ export default function CountriesSources() {
         name: country.name,
         slug: country.slug,
         status: country.status,
-        welcome: country.welcome,
-        goodbye: country.goodbye,
-        whatsapp: country.whatsapp,
       })
     } else {
       setEditingId(null)
@@ -179,9 +128,6 @@ export default function CountriesSources() {
         name: "",
         slug: "",
         status: "Manual",
-        welcome: "",
-        goodbye: "",
-        whatsapp: "",
       })
     }
     setIsOpen(true)
@@ -257,69 +203,67 @@ export default function CountriesSources() {
               Add Country
             </Button>
           </DialogTrigger>
-<DialogContent className="max-w-2xl">
-  <DialogHeader>
-    <DialogTitle>{editingId ? "Edit Country" : "Add New Country"}</DialogTitle>
-    <DialogDescription>
-      {editingId ? "Update country configuration" : "Create a new country entry"}
-    </DialogDescription>
-  </DialogHeader>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Edit Country" : "Add New Country"}</DialogTitle>
+              <DialogDescription>
+                {editingId ? "Update country configuration" : "Create a new country entry"}
+              </DialogDescription>
+            </DialogHeader>
 
-  <div className="space-y-4">
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <label className="text-sm font-medium text-foreground">Country Name *</label>
-        <Input
-          placeholder="e.g., Lebanon"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium text-foreground">Slug *</label>
-        <Input
-          placeholder="e.g., /lebanon"
-          value={formData.slug}
-          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-          className="mt-1"
-        />
-      </div>
-    </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">Country Name *</label>
+                  <Input
+                    placeholder="e.g., Lebanon"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">Slug *</label>
+                  <Input
+                    placeholder="e.g., /lebanon"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
 
-    <div>
-      <label className="text-sm font-medium text-foreground">Status</label>
-      <select
-        value={formData.status}
-        onChange={(e) =>
-          setFormData({ ...formData, status: e.target.value as "Manual" | "Auto" })
-        }
-        className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
-      >
-        <option value="Manual">Manual</option>
-        <option value="Auto">Auto</option>
-      </select>
-    </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value as "Manual" | "Auto" })
+                  }
+                  className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="Manual">Manual</option>
+                  <option value="Auto">Auto</option>
+                </select>
+              </div>
 
-    <div className="flex gap-2 justify-end pt-4">
-      <Button variant="outline" onClick={() => setIsOpen(false)}>
-        Cancel
-      </Button>
-      <Button onClick={handleSave} className="bg-accent hover:bg-accent/90">
-        {editingId ? "Update" : "Add"} Country
-      </Button>
-    </div>
-  </div>
-</DialogContent>
-
-
+              <div className="flex gap-2 justify-end pt-4">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} className="bg-accent hover:bg-accent/90">
+                  {editingId ? "Update" : "Add"} Country
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
         </Dialog>
       </div>
 
       {/* Countries card OR Sources card */}
       {selectedCountryId === null ? (
         <>
-          {/* Countries Table (Welcome/Goodbye columns removed) */}
+          {/* Countries Table */}
           <Card className="bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Countries</CardTitle>
@@ -454,7 +398,7 @@ export default function CountriesSources() {
           </Card>
         </>
       ) : (
-        // Sources Card (News Start removed)
+        // Sources Card with NEW "Joining words" column after Type
         <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
@@ -475,7 +419,7 @@ export default function CountriesSources() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-sm">
+              <table className="w-full min-w-[1180px] text-sm">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-semibold">Source</th>
@@ -484,6 +428,8 @@ export default function CountriesSources() {
                     <th className="text-left py-3 px-4 font-semibold">Article Count</th>
                     <th className="text-left py-3 px-4 font-semibold">Sequence</th>
                     <th className="text-left py-3 px-4 font-semibold">Type</th>
+                    {/* NEW HEADER */}
+                    <th className="text-left py-3 px-4 font-semibold">Joining words</th>
                     <th className="text-left py-3 px-4 font-semibold">Intro Music</th>
                   </tr>
                 </thead>
@@ -535,6 +481,20 @@ export default function CountriesSources() {
                           <option value="Newspaper">Newspaper</option>
                         </select>
                       </td>
+                      {/* NEW CELL: Joining words dropdown */}
+                      <td className="py-3 px-4">
+                        <select
+                          className="w-40 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                          value={row.joiningWords}
+                          onChange={(e) =>
+                            updateSourceField(selectedCountryId!, idx, "joiningWords", e.target.value as JoiningWords)
+                          }
+                        >
+                          <option value="Mentioned">Mentioned</option>
+                          <option value="Notified">Notified</option>
+                          <option value="Updated">Updated</option>
+                        </select>
+                      </td>
                       <td className="py-3 px-4">
                         <input type="file" className="text-xs" onChange={() => {}} />
                       </td>
@@ -543,7 +503,7 @@ export default function CountriesSources() {
 
                   {(countrySources[selectedCountryId!] || []).length === 0 && (
                     <tr>
-                      <td className="py-6 px-4 text-muted-foreground" colSpan={7}>
+                      <td className="py-6 px-4 text-muted-foreground" colSpan={8}>
                         No sources yet.
                       </td>
                     </tr>
