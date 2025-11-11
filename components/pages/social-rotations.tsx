@@ -27,11 +27,11 @@ type Rotations = {
   yt_descriptions?: ToggleItem[]
   yt_tags?: ToggleItem[]
   yt_categoryIds?: ToggleItem[]
-  yt_defaultLanguages?: ToggleItem[]
-  yt_privacyStatus?: ToggleItem[]
-  yt_madeForKids?: ToggleItem[]
-  yt_paidPromotion?: ToggleItem[]
-  yt_syntheticMedia?: ToggleItem[]
+  yt_defaultLanguages?: ToggleItem[]   // SINGLE SELECT
+  yt_privacyStatus?: ToggleItem[]      // SINGLE SELECT
+  yt_madeForKids?: ToggleItem[]        // YES/NO (SINGLE SELECT)
+  yt_paidPromotion?: ToggleItem[]      // YES/NO (SINGLE SELECT)
+  yt_syntheticMedia?: ToggleItem[]     // YES/NO (SINGLE SELECT)
   yt_thumbnails?: ToggleItem[]
 }
 
@@ -121,11 +121,11 @@ export default function SocialRotations() {
       ],
       yt_categoryIds: [{ text: "25", active: true }],
       yt_defaultLanguages: [
-        { text: "ar", active: true },
+        { text: "ar", active: true }, // single-select default
         { text: "en", active: false },
       ],
       yt_privacyStatus: [
-        { text: "public", active: true },
+        { text: "public", active: true }, // single-select default
         { text: "unlisted", active: false },
         { text: "private", active: false },
       ],
@@ -150,13 +150,26 @@ export default function SocialRotations() {
   const [activeOnly, setActiveOnly] = useState(false)
 
   // --- Safe helpers (handle optional sections) ---
-  const toggleItem = (platform: PlatformKey, section: keyof Rotations, index: number) => {
+  const toggleItem = (
+    platform: PlatformKey,
+    section: keyof Rotations,
+    index: number,
+    singleSelect: boolean = false
+  ) => {
     setData(prev => {
       const platformState = { ...prev[platform] }
       const current = (platformState[section] as ToggleItem[] | undefined) ?? []
-      const newArr = [...current]
-      if (!newArr[index]) return prev
-      newArr[index] = { ...newArr[index], active: !newArr[index].active }
+      if (!current[index]) return prev
+
+      let newArr: ToggleItem[]
+      if (singleSelect) {
+        // Force exactly one active; clicking sets the clicked one active
+        newArr = current.map((it, i) => ({ ...it, active: i === index }))
+      } else {
+        newArr = [...current]
+        newArr[index] = { ...newArr[index], active: !newArr[index].active }
+      }
+
       return { ...prev, [platform]: { ...platformState, [section]: newArr } }
     })
   }
@@ -180,6 +193,7 @@ export default function SocialRotations() {
     addLabel,
     icon,
     hint,
+    singleSelect = false,
   }: {
     platform: PlatformKey
     title: string
@@ -187,6 +201,7 @@ export default function SocialRotations() {
     addLabel: string
     icon?: React.ReactNode
     hint?: string
+    singleSelect?: boolean
   }) => {
     const items = (data[platform][sectionKey] as ToggleItem[] | undefined) ?? []
 
@@ -273,7 +288,7 @@ export default function SocialRotations() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => toggleItem(platform, sectionKey, idx)}
+                    onClick={() => toggleItem(platform, sectionKey, idx, singleSelect)}
                     className={`text-xs px-2.5 py-1.5 rounded-full transition-colors ${
                       it.active
                         ? "bg-accent text-accent-foreground"
@@ -347,11 +362,16 @@ export default function SocialRotations() {
           <Section platform={platform} title="Descriptions" sectionKey="yt_descriptions" addLabel="Add Description" hint="Multiline supported; keep several templates and toggle active ones." />
           <Section platform={platform} title="Tags" sectionKey="yt_tags" addLabel="Add Tag" hint="Active tags will be sent as the tag list." />
           <Section platform={platform} title="Category IDs" sectionKey="yt_categoryIds" addLabel="Add Category ID" hint="Common: 25 = News & Politics" />
-          <Section platform={platform} title="Default Languages" sectionKey="yt_defaultLanguages" addLabel="Add Language Code" hint="e.g., ar, en" />
-          <Section platform={platform} title="Privacy Status" sectionKey="yt_privacyStatus" addLabel="Add Status" hint="Choose one: public, unlisted, private." />
-          <Section platform={platform} title="Made for Kids" sectionKey="yt_madeForKids" addLabel="Add Option" hint="Yes/No — only one should be active." />
-          <Section platform={platform} title="Has Paid Promotion" sectionKey="yt_paidPromotion" addLabel="Add Option" hint="Yes/No — set disclosure flag." />
-          <Section platform={platform} title="Contains Synthetic Media" sectionKey="yt_syntheticMedia" addLabel="Add Option" hint="Yes/No — used for compliance." />
+
+          {/* SINGLE-SELECT */}
+          <Section platform={platform} title="Default Languages" sectionKey="yt_defaultLanguages" addLabel="Add Language Code" hint="Exactly one language will be used (e.g., ar, en)." singleSelect />
+          <Section platform={platform} title="Privacy Status" sectionKey="yt_privacyStatus" addLabel="Add Status" hint="Exactly one: public, unlisted, or private." singleSelect />
+
+          {/* YES/NO (SINGLE-SELECT) */}
+          <Section platform={platform} title="Made for Kids" sectionKey="yt_madeForKids" addLabel="Add Option" hint="Yes or No (single choice)." singleSelect />
+          <Section platform={platform} title="Has Paid Promotion" sectionKey="yt_paidPromotion" addLabel="Add Option" hint="Yes or No (single choice)." singleSelect />
+          <Section platform={platform} title="Contains Synthetic Media" sectionKey="yt_syntheticMedia" addLabel="Add Option" hint="Yes or No (single choice)." singleSelect />
+
           <Section platform={platform} title="Thumbnails" sectionKey="yt_thumbnails" addLabel="Add Thumbnail Path/URL" hint="Provide file path or URL for custom thumbnail." />
         </div>
       )
