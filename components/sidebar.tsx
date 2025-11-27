@@ -1,22 +1,31 @@
 "use client"
 
-import { LayoutGrid, Globe, Users, Wand2, Send, LogOut, BarChart3 } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
+import {
+  LayoutGrid,
+  Globe,
+  Users,
+  Wand2,
+  Send,
+  LogOut,
+  BarChart3,
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 
-interface SidebarProps {
-  currentPage: string
-  onPageChange: (page: string) => void
-}
+export default function Sidebar() {
+  const pathname = usePathname()
 
-export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "countries-sources", label: "Countries & Sources", icon: Globe },
-    { id: "sponsors", label: "Sponsors", icon: Users },
-    { id: "script-generation", label: "Script Generation", icon: Wand2 },
-    { id: "publishing", label: "Publishing", icon: Send },
-    { id: "social-rotations", label: "Social Rotations", icon: Send },
+    { id: "dashboard", label: "Dashboard", icon: LayoutGrid, href: "/dashboard" },
+    { id: "analytics", label: "Analytics", icon: BarChart3, href: "/analytics" },
+    { id: "countries-sources", label: "Countries & Sources", icon: Globe, href: "/countries-sources" },
+    { id: "sponsors", label: "Sponsors", icon: Users, href: "/sponsors" },
+    { id: "script-generation", label: "Script Generation", icon: Wand2, href: "/script-generation" },
+    { id: "publishing", label: "Publishing", icon: Send, href: "/publishing" },
+    { id: "social-rotations", label: "Social Rotations", icon: Send, href: "/social-rotations" },
   ]
 
   return (
@@ -37,11 +46,12 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon
-          const isActive = currentPage === item.id
+          const isActive = pathname === item.href
+
           return (
-            <button
+            <Link
               key={item.id}
-              onClick={() => onPageChange(item.id)}
+              href={item.href}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
@@ -51,7 +61,7 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
             >
               <Icon size={20} />
               <span className="font-medium">{item.label}</span>
-            </button>
+            </Link>
           )
         })}
       </nav>
