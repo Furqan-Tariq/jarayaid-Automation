@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fetchJson } from "@/lib/fetchJson";
@@ -9,7 +9,11 @@ import CountryDialog from "./components/CountryDialog";
 import CountriesTable from "./components/CountriesTable";
 import SourcesTable from "./components/SourcesTable";
 import QuickScheduler from "./components/QuickScheduler";
-import { getAll } from "./service";
+import {
+  getAll,
+  getSchedulerByCountryID,
+  getSourcesByCountryID,
+} from "./service";
 
 type CountryDropdown = { id: number; name: string; arabicname?: string };
 type SavedCountry = {
@@ -25,6 +29,8 @@ export default function CountriesSourcesPage() {
     [],
   );
   const [countries, setCountries] = useState<SavedCountry[]>([]);
+  const [countryScheduler, setCountryScheduler] = useState<any>(null);
+  const [sources, setSources] = useState<SavedCountry[]>([]);
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
     null,
   );
@@ -32,15 +38,29 @@ export default function CountriesSourcesPage() {
   const [countryDialogOpen, setCountryDialogOpen] = useState(false);
   const [editingCountryId, setEditingCountryId] = useState<number | null>(null);
 
-  // Sources map: countryId => array of sources
   const [countrySources, setCountrySources] = useState<Record<number, any[]>>(
     {},
   );
 
+  const loadSources = async () => {
+    try {
+      const res: any = await fetchJson("admin-dashboard/getRssSources");
+      setCountrySources(res?.data || {});
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const loadDropdownCountries = async () => {
     try {
-      const res: any = await fetchJson("admin-dashboard/getCountries");
-      setDropdownCountries(res?.data || []);
+      const res: any = await fetchJson("admin-dashboard/getCategories");
+      setDropdownCountries(
+        res?.data?.map((row: any) => ({
+          id: row.ID,
+          name: row.NAME,
+          arabicname: row.ARABIC_NAME,
+        })) || [],
+      );
     } catch (e) {
       console.error(e);
     }
@@ -55,10 +75,36 @@ export default function CountriesSourcesPage() {
     }
   };
 
+  const loadSavedSources = async () => {
+    try {
+      const res: any = await getSourcesByCountryID(selectedCountryId as number);
+      setSources(res?.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadScheduler = async (countryId: number) => {
+    try {
+      const res: any = await getSchedulerByCountryID(countryId as number);
+      setCountryScheduler(res?.data[0] || null);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     loadDropdownCountries();
     loadSavedCountries();
+    loadSources();
   }, []);
+
+  useEffect(() => {
+    if (selectedCountryId) {
+      loadSavedSources();
+      loadScheduler(selectedCountryId);
+    }
+  }, [selectedCountryId]);
 
   return (
     <div className="p-8 space-y-8">
@@ -71,6 +117,7 @@ export default function CountriesSourcesPage() {
             Select a country to view and manage its news sources
           </p>
         </div>
+
         <CountryDialog
           open={countryDialogOpen}
           setOpen={setCountryDialogOpen}
@@ -78,13 +125,14 @@ export default function CountriesSourcesPage() {
           editingCountryId={editingCountryId}
           onSaved={loadSavedCountries}
           savedCountries={countries}
+          countrySources={countrySources}
         >
           <Button className="gap-2 bg-accent hover:bg-accent/90">
-            <Plus size={18} />
-            Add Country
+            <Plus size={18} /> Add Country
           </Button>
         </CountryDialog>
       </div>
+
       <Card className="bg-card">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Countries</CardTitle>
@@ -109,18 +157,13 @@ export default function CountriesSourcesPage() {
         <SourcesTable
           countryId={selectedCountryId}
           countries={countries}
-          countrySources={countrySources}
-          setCountrySources={setCountrySources}
+          countrySources={sources}
+          setCountrySources={setSources}
+          reloadSources={loadSavedSources}
         />
       )}
-      <Card className="bg-card">
-        <CardHeader>
-          <CardTitle>Quick Scheduler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <QuickScheduler countries={countries} />
-        </CardContent>
-      </Card>
+
+      <QuickScheduler countries={countries} scheduler={countryScheduler} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import Sidebar from "@/components/sidebar"
+import ToasterProvider from "@/components/toastProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <main className="flex-1 overflow-auto">{children}</main>
         </div>
+        <ToasterProvider />
         <Analytics />
       </body>
     </html>

@@ -83,69 +83,67 @@ export default function CountriesTable({
   };
 
   return (
-    <div>
-      <table className="w-full min-w-[1100px] text-sm">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="text-left py-3 px-4 font-semibold w-12"></th>
-            <th className="text-left py-3 px-4 font-semibold">Country</th>
-            <th className="text-left py-3 px-4 font-semibold">Slug</th>
-            <th className="text-left py-3 px-4 font-semibold">Status</th>
-            <th className="text-left py-3 px-4 font-semibold">Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          {countries.map((country) => (
-            <tr
-              key={country.id}
-              className="border-b border-border hover:bg-muted/50"
-            >
-              <td className="py-3 px-4">
-                <Switch
-                  checked={country.status === "ACTIVE"}
-                  onCheckedChange={() => toggleStatus(country)}
-                />
-              </td>
-              <td className="py-3 px-4 font-medium">{country.country_name}</td>
-              <td className="py-3 px-4 text-muted-foreground text-xs">
-                {country.slug}
-              </td>
-              <td className="py-3 px-4">
-                <button
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                    country.type === "MANUAL"
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                  onClick={() => changeScriptType(country)}
-                >
-                  {country.type === "MANUAL" ? "Manual" : "Auto"}
-                </button>
-              </td>
-              <td className="py-3 px-4">
+    <table className="w-full min-w-[1100px] text-sm">
+      <thead>
+        <tr className="border-b border-border">
+          <th className="text-left py-3 px-4 font-semibold w-12"></th>
+          <th className="text-left py-3 px-4 font-semibold">Country</th>
+          <th className="text-left py-3 px-4 font-semibold">Slug</th>
+          <th className="text-left py-3 px-4 font-semibold">Status</th>
+          <th className="text-left py-3 px-4 font-semibold">Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {countries.map((country) => (
+          <tr
+            key={country.id}
+            className="border-b border-border hover:bg-muted/50"
+          >
+            <td className="py-3 px-4">
+              <Switch
+                checked={country.status === "ACTIVE"}
+                onCheckedChange={() => toggleStatus(country)}
+              />
+            </td>
+            <td className="py-3 px-4 font-medium">{country.country_name}</td>
+            <td className="py-3 px-4 text-muted-foreground text-xs">
+              {country.slug}
+            </td>
+            <td className="py-3 px-4">
+              <button
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  country.type === "MANUAL"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => changeScriptType(country)}
+              >
+                {country.type === "MANUAL" ? "Manual" : "Auto"}
+              </button>
+            </td>
+            <td className="py-3 px-4">
+              <Button
+                className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground text-xs px-3 py-1"
+                onClick={() => setSelectedCountryId(country.id)}
+              >
+                View
+              </Button>
+            </td>
+            <td className="py-3 px-4">
+              <div className="flex gap-2">
                 <Button
-                  className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground text-xs px-3 py-1"
-                  onClick={() => setSelectedCountryId(country.id)}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditCountry(country.id)}
+                  className="gap-1"
                 >
-                  View
+                  <Edit2 size={16} />
                 </Button>
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditCountry(country.id)}
-                    className="gap-1"
-                  >
-                    <Edit2 size={16} />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

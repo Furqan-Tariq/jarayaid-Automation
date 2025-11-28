@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { post, update } from "../service";
+import toast from "react-hot-toast";
 
 type DropDownCountry = { id: number; name: string; arabicname: string };
 
@@ -29,6 +30,7 @@ type Props = {
   editingCountryId: number | null;
   onSaved: () => void;
   savedCountries: any[];
+  countrySources: any[];
   children: ReactNode;
 };
 
@@ -39,6 +41,7 @@ export default function CountryDialog({
   editingCountryId,
   onSaved,
   savedCountries,
+  countrySources,
   children,
 }: Props) {
   const [form, setForm] = useState({
@@ -46,6 +49,7 @@ export default function CountryDialog({
     name: "",
     slug: "",
     type: "MANUAL" as "MANUAL" | "AUTO",
+    sources: []
   });
 
   useEffect(() => {
@@ -58,6 +62,7 @@ export default function CountryDialog({
           name: country.country_name,
           slug: country.slug || "",
           type: country.type?.toUpperCase() === "AUTO" ? "AUTO" : "MANUAL",
+          sources: country?.sources
         });
       }
     } else {
@@ -67,12 +72,13 @@ export default function CountryDialog({
         name: "",
         slug: "",
         type: "MANUAL",
+        sources: []
       });
     }
   }, [editingCountryId, savedCountries]);
 
   const saveCountry = async () => {
-    if (!form.country_id) return alert("Country is required");
+    if (!form.country_id) return toast.error("Country is required");
 
     try {
       if(!editingCountryId) {
@@ -87,6 +93,7 @@ export default function CountryDialog({
           slug: form.slug,
           type: form.type,
           operator: "test1",
+          sources: form.sources
         };
   
         await post(payload);
@@ -103,6 +110,7 @@ export default function CountryDialog({
           slug: form.slug,
           type: form.type,
           operator: "test1",
+          sources: form.sources
         };
   
         await update(payload);
@@ -111,7 +119,7 @@ export default function CountryDialog({
       setOpen(false);
     } catch (e) {
       console.error(e);
-      alert("Failed to save country");
+      toast.error("Failed to save country");
     }
   };
 
@@ -139,10 +147,16 @@ export default function CountryDialog({
               value={form.country_id}
               onValueChange={(v) => {
                 const found = dropdownCountries.find((d) => String(d.id) === v);
+                const sources = countrySources?.find(row => row.ID === found?.id)?.rssCategoriesUrls?.filter((row: any) => row.STATUS === "active")?.map((row: any) => ({
+                  source_name: row.NAME,
+                  news_source: row.SOURCE_URL,
+                  source_type: "News",
+                }))
                 setForm((prev) => ({
                   ...prev,
                   country_id: v,
                   name: found?.name || "",
+                  sources: sources
                 }));
               }}
             >
