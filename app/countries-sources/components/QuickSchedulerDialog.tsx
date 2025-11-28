@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
@@ -27,6 +26,14 @@ const frequencyOptions = [
   { label: "Monthly", value: "MONTHLY" },
 ];
 
+const platformOptions = ["YouTube", "Instagram", "Facebook", "TikTok"];
+
+type Row = {
+  platform: string;
+  frequency: string;
+  timeSeconds: string;
+};
+
 type SchedulerData = {
   country_id: number;
   platform: string;
@@ -37,15 +44,14 @@ type SchedulerData = {
 type Props = {
   open: boolean;
   setOpen: (v: boolean) => void;
-  country: string
+  country: string;
+  country_id: number;
   editRow?: {
-    country_id: number;
     platform: string;
     upload_time?: number | null;
     upload_frequency?: string | null;
-  };
-
-  onSave: (data: SchedulerData) => Promise<void>;
+  }[];
+  onSave: (data: SchedulerData[]) => Promise<void>;
 };
 
 export default function SchedulerDialog({
@@ -54,49 +60,67 @@ export default function SchedulerDialog({
   editRow,
   onSave,
   country,
+  country_id,
 }: Props) {
-  const [platform, setPlatform] = useState("");
-  const [frequency, setFrequency] = useState<string>("");
-  const [timeSeconds, setTimeSeconds] = useState("");
+  const [rows, setRows] = useState<Row[]>([
+    { platform: "", frequency: "", timeSeconds: "" },
+  ]);
 
   useEffect(() => {
     if (!editRow) return;
 
-    setPlatform(editRow.platform || "");
+    const mapped = editRow.map((r) => ({
+      platform: r.platform ?? "",
+      frequency: r.upload_frequency ?? "",
+      timeSeconds:
+        r.upload_time || r.upload_time === 0 ? String(r.upload_time) : "",
+    }));
 
-    if (editRow.upload_frequency) {
-      setFrequency(editRow.upload_frequency);
-    }
-
-    if (editRow.upload_time) {
-      setTimeSeconds(String(editRow.upload_time));
-    }
+    setRows(mapped.length > 0 ? mapped : rows);
   }, [editRow]);
 
+  const updateRow = (i: number, key: keyof Row, value: string) => {
+    setRows((prev) => {
+      const copy = [...prev];
+      copy[i] = { ...copy[i], [key]: value };
+      return copy;
+    });
+  };
+
+  const addRow = () => {
+    setRows((prev) => [...prev, { platform: "", frequency: "", timeSeconds: "" }]);
+  };
+
+  const removeRow = (i: number) => {
+    setRows((prev) => prev.filter((_, idx) => idx !== i));
+  };
 
   const handleSave = async () => {
-    if (!platform) return;
+    const payload: SchedulerData[] = [];
 
-    let payload: SchedulerData;
+    rows.forEach((row) => {
+      if (!row.platform) return;
 
-    if (frequency) {
-      payload = {
-        country_id: editRow?.country_id as number,
-        platform,
-        key: "UPLOAD_FREQUENCY",
-        value: frequency,
-      };
-    }
-    else if (timeSeconds) {
-      payload = {
-        country_id: editRow?.country_id as number,
-        platform,
-        key: "UPLOAD_TIME",
-        value: Number(timeSeconds),
-      };
-    } else {
-      return;
-    }
+      if (row.frequency) {
+        payload.push({
+          country_id,
+          platform: row.platform,
+          key: "UPLOAD_FREQUENCY",
+          value: row.frequency,
+        });
+      }
+
+      if (row.timeSeconds) {
+        payload.push({
+          country_id,
+          platform: row.platform,
+          key: "UPLOAD_TIME",
+          value: row.timeSeconds,
+        });
+      }
+    });
+
+    if (payload.length === 0) return;
 
     await onSave(payload);
     setOpen(false);
@@ -104,61 +128,95 @@ export default function SchedulerDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {country + " - " + (editRow ? "Update Scheduler" : "Create Scheduler")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Platform</label>
-          <Input
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-            placeholder="FACEBOOK / TIKTOK / INSTAGRAM"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Upload Frequency</label>
-
-          <Select value={frequency} onValueChange={setFrequency}>
-            <SelectTrigger className="h-9 w-full">
-              <SelectValue placeholder="Select frequency..." />
-            </SelectTrigger>
-            <SelectContent>
-              {frequencyOptions.map((d) => (
-                <SelectItem key={d.value} value={d.value}>
-                  {d.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Upload Time (seconds)</label>
-          <Input
-            type="number"
-            placeholder="e.g. 36000"
-            value={timeSeconds}
-            onChange={(e) => setTimeSeconds(e.target.value)}
-            disabled={!!frequency}
-          />
-        </div>
-
-        <DialogFooter>
-          <div className="flex gap-2 justify-end pt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-accent hover:bg-accent/90"
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          {rows.map((row, index) => (
+            <div
+              key={index}
+              className="grid grid-cols-12 gap-3 p-3 border rounded-lg"
             >
-              {editRow ? "Update" : "Add"} Scheduler
-            </Button>
-          </div>
+              {/* Platform */}
+              <div className="col-span-3 space-y-1">
+                <label className="text-sm font-medium">Platform</label>
+                <Select
+                  value={row.platform}
+                  onValueChange={(v) => updateRow(index, "platform", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {platformOptions.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Frequency */}
+              <div className="col-span-3 space-y-1">
+                <label className="text-sm font-medium">Frequency</label>
+                <Select
+                  value={row.frequency}
+                  onValueChange={(v) => updateRow(index, "frequency", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {frequencyOptions.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Time */}
+              <div className="col-span-4 space-y-1">
+                <label className="text-sm font-medium">Time (sec)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 36000"
+                  value={row.timeSeconds}
+                  onChange={(e) => updateRow(index, "timeSeconds", e.target.value)}
+                />
+              </div>
+
+              <div className="col-span-2 flex items-end justify-end">
+                {rows.length > 1 && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => removeRow(index)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <Button variant="outline" onClick={addRow} className="w-full">
+            + Add Another Platform
+          </Button>
+        </div>
+
+        <DialogFooter className="pt-4">
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} className="bg-accent hover:bg-accent/90">
+            {editRow ? "Update" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

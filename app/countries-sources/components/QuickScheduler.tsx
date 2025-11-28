@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import SchedulerDialog from "./QuickSchedulerDialog";
 import { Plus, Edit2, Trash2 } from "lucide-react";
+import { createScheduler } from "../service";
 
 type Props = {
   countries: { id: number; name: string }[];
@@ -39,11 +40,11 @@ export default function QuickScheduler({
   };
 
   const onSaveScheduler = async (payload: any) => {
-    await fetchJson("admin-dashboard/createScheduler", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    reloadScheduler();
+    if(payload.id) {
+      
+    } else {
+      await createScheduler({schedulers: payload});
+    }
   };
 
   const secondsToHHMM = (sec: number) => {
@@ -219,6 +220,7 @@ export default function QuickScheduler({
         editRow={dialogData}
         onSave={onSaveScheduler}
         country={scheduler?.COUNTRY_NAME}
+        country_id={scheduler?.COUNTRY_ID}
       />
     </>
   );

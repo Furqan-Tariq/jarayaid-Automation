@@ -70,3 +70,12 @@ export async function getSchedulerByCountryID(countryID: number) {
   }
   return response.json();
 }
+
+export async function createScheduler(payload: any) {
+  const url = base + "upload-scheduler";
+  return fetch(url, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: headers
+  });
+}
