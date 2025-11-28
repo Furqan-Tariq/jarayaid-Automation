@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useRef, useState, useMemo, useEffect } from "react"
-import Image from "next/image"
-import { X } from "lucide-react"
+import { useRef, useState, useMemo, useEffect } from "react";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 import {
   Dialog,
@@ -11,85 +11,93 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 type Props = {
-  open: boolean
-  setOpen: (v: boolean) => void
-  onCreate: (data: any) => void
-}
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onCreate: (data: any) => void;
+  countries: any[];
+};
 
-export default function SponsorDialog({ open, setOpen, onCreate }: Props) {
-  const [name, setName] = useState("")
-  const [website, setWebsite] = useState("")
-  const [start, setStart] = useState("")
-  const [end, setEnd] = useState("")
-  const [countriesDraft, setCountriesDraft] = useState<string[]>([])
-  const [countryInput, setCountryInput] = useState("")
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string>("")
+export default function SponsorDialog({
+  open,
+  setOpen,
+  onCreate,
+  countries,
+}: Props) {
+  const [name, setName] = useState("");
+  const [website, setWebsite] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [countriesDraft, setCountriesDraft] = useState<string[]>([]);
+  const [countryInput, setCountryInput] = useState("");
+  const [selectedCountries, setSelectedCountries] = useState([]);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
 
-  const fileRef = useRef<HTMLInputElement | null>(null)
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!open) reset()
-  }, [open])
+    if (!open) reset();
+  }, [open]);
 
   const reset = () => {
-    setName("")
-    setWebsite("")
-    setStart("")
-    setEnd("")
-    setCountriesDraft([])
-    setCountryInput("")
-    setLogoFile(null)
-    setLogoPreview("")
-    if (fileRef.current) fileRef.current.value = ""
-  }
+    setName("");
+    setWebsite("");
+    setStart("");
+    setEnd("");
+    setCountriesDraft([]);
+    setCountryInput("");
+    setLogoFile(null);
+    setLogoPreview("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const canSubmit = useMemo(() => {
-    return name.trim() && website.trim() && start && end
-  }, [name, website, start, end])
-
-  const handleAddCountryChip = () => {
-    const val = countryInput.trim()
-    if (!val) return
-    if (!countriesDraft.includes(val)) {
-      setCountriesDraft((prev) => [...prev, val])
-    }
-    setCountryInput("")
-  }
-
-  const removeCountryChip = (target: string) => {
-    setCountriesDraft((prev) => prev.filter((c) => c !== target))
-  }
+    return name.trim() && website.trim() && start && end;
+  }, [name, website, start, end]);
 
   const onUploadLogo: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setLogoFile(f)
-    const url = URL.createObjectURL(f)
-    setLogoPreview(url)
-  }
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setLogoFile(f);
+    const url = URL.createObjectURL(f);
+    setLogoPreview(url);
+  };
 
   const handleCreate = () => {
-    if (!canSubmit) return
+    if (!canSubmit) return;
 
-    onCreate({
-      id: Date.now(),
+    const operator = "admin";
+
+    const payload = {
       name,
       website,
-      logo: logoPreview || "/placeholder.svg",
-      activePeriod: { start, end },
-      countries: countriesDraft.length ? countriesDraft : ["General"],
-    })
+      startdate: start,
+      enddate: end,
+      operator,
+      countries: selectedCountries.map((c) => ({
+        country_id: c,
+        operator,
+      })),
+    };
 
-    setOpen(false)
-  }
+    onCreate(payload);
+    setOpen(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -125,9 +133,9 @@ export default function SponsorDialog({ open, setOpen, onCreate }: Props) {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setLogoFile(null)
-                      setLogoPreview("")
-                      if (fileRef.current) fileRef.current.value = ""
+                      setLogoFile(null);
+                      setLogoPreview("");
+                      if (fileRef.current) fileRef.current.value = "";
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -145,7 +153,10 @@ export default function SponsorDialog({ open, setOpen, onCreate }: Props) {
             </div>
             <div>
               <Label>Website</Label>
-              <Input value={website} onChange={(e) => setWebsite(e.target.value)} />
+              <Input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
             </div>
           </div>
 
@@ -153,46 +164,36 @@ export default function SponsorDialog({ open, setOpen, onCreate }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Start Date</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+              <Input
+                type="date"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
             </div>
             <div>
               <Label>End Date</Label>
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <Input
+                type="date"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+              />
             </div>
           </div>
 
           {/* Countries */}
           <div className="space-y-2">
             <Label>Countries</Label>
-            <div className="flex flex-wrap gap-2">
-              {countriesDraft.map((c) => (
-                <Badge key={c} variant="secondary">
-                  {c}
-                  <button
-                    onClick={() => removeCountryChip(c)}
-                    className="ml-1 text-xs rounded-sm px-1"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                value={countryInput}
-                onChange={(e) => setCountryInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault()
-                    handleAddCountryChip()
-                  }
-                }}
-                placeholder="Type and press Enter"
-              />
-              <Button variant="outline" size="sm" onClick={handleAddCountryChip}>
-                Add
-              </Button>
-            </div>
+            <MultiSelect
+              value={selectedCountries}
+              onChange={setSelectedCountries}
+              placeholder="Select countries"
+              options={
+                countries.map((c) => ({
+                  label: c.name,
+                  value: c.id,
+                })) as any
+              }
+            />
           </div>
         </div>
 
@@ -200,11 +201,15 @@ export default function SponsorDialog({ open, setOpen, onCreate }: Props) {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button className="bg-accent hover:bg-accent/90" disabled={!canSubmit} onClick={handleCreate}>
+          <Button
+            className="bg-accent hover:bg-accent/90"
+            disabled={!canSubmit}
+            onClick={handleCreate}
+          >
             Create Sponsor
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

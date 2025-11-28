@@ -14,6 +14,7 @@ import {
   getSchedulerByCountryID,
   getSourcesByCountryID,
 } from "./service";
+import useGetCategories from "@/hooks/useGetCategories";
 
 type CountryDropdown = { id: number; name: string; arabicname?: string };
 type SavedCountry = {
@@ -41,6 +42,8 @@ export default function CountriesSourcesPage() {
   const [countrySources, setCountrySources] = useState<Record<number, any[]>>(
     {},
   );
+  
+  const getCategories = useGetCategories();
 
   const loadSources = async () => {
     try {
@@ -53,14 +56,8 @@ export default function CountriesSourcesPage() {
 
   const loadDropdownCountries = async () => {
     try {
-      const res: any = await fetchJson("admin-dashboard/getCategories");
-      setDropdownCountries(
-        res?.data?.map((row: any) => ({
-          id: row.ID,
-          name: row.NAME,
-          arabicname: row.ARABIC_NAME,
-        })) || [],
-      );
+      const res = await getCategories();
+      setDropdownCountries(res);
     } catch (e) {
       console.error(e);
     }
