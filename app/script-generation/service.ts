@@ -3,17 +3,8 @@ import { getHeaders, getServerRootURL } from "@/lib/utils";
 const headers = getHeaders();
 const base = getServerRootURL();
 
-export async function createSponsor(payload: any) {
-  const url = base + "sponsor";
-  return fetch(url, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    headers: headers
-  });
-}
-
-export async function getAllSponsors() {
-  const url = base + "sponsor";
+export async function getScripts() {
+  const url = base + "script-generation";
   const response = await fetch(url, {
     method: "GET",
     headers: headers
@@ -24,9 +15,9 @@ export async function getAllSponsors() {
   return response.json();
 }
 
-export async function updateSponsor(payload: any) {
-  const url = base + "sponsor/" + payload.id;
-  delete payload.id
+export async function updateApprovalStatus(payload: any) {
+  const url = base + "script-generation/" + payload.id;
+  delete payload.id;
   return fetch(url, {
     method: "PUT",
     body: JSON.stringify(payload),

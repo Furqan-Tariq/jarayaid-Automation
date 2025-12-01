@@ -28,8 +28,9 @@ import { MultiSelect } from "@/components/ui/multi-select";
 type Props = {
   open: boolean;
   setOpen: (v: boolean) => void;
-  onCreate: (data: any) => void;
+  onCreate: (data: any, isEdit?: boolean) => void; // add optional isEdit
   countries: any[];
+  editingSponsor?: any | null;
 };
 
 export default function SponsorDialog({
@@ -37,6 +38,7 @@ export default function SponsorDialog({
   setOpen,
   onCreate,
   countries,
+  editingSponsor
 }: Props) {
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
@@ -53,6 +55,19 @@ export default function SponsorDialog({
   useEffect(() => {
     if (!open) reset();
   }, [open]);
+  
+  useEffect(() => {
+    if (open && editingSponsor) {
+      setName(editingSponsor.name);
+      setWebsite(editingSponsor.website);
+      setStart(editingSponsor.activePeriod.start);
+      setEnd(editingSponsor.activePeriod.end);
+      setSelectedCountries(
+        editingSponsor.countries.map((c: any) => c.country_id)
+      );
+      setLogoPreview(editingSponsor.logo || "");
+    }
+  }, [open, editingSponsor]);
 
   const reset = () => {
     setName("");
@@ -84,6 +99,7 @@ export default function SponsorDialog({
     const operator = "admin";
 
     const payload = {
+      id: editingSponsor?.id,
       name,
       website,
       startdate: start,
@@ -103,12 +119,11 @@ export default function SponsorDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md rounded-xl">
         <DialogHeader>
-          <DialogTitle>Add Sponsor</DialogTitle>
+          <DialogTitle>{editingSponsor ? "Edit" : "Add"} Sponsor</DialogTitle>
           <DialogDescription>Fill in sponsor details.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Logo Upload */}
           <div className="space-y-2">
             <Label className="text-sm">Logo</Label>
             <div className="flex items-center gap-3">
@@ -206,7 +221,7 @@ export default function SponsorDialog({
             disabled={!canSubmit}
             onClick={handleCreate}
           >
-            Create Sponsor
+            {editingSponsor ? "Edit" : "Create"} Sponsor
           </Button>
         </DialogFooter>
       </DialogContent>

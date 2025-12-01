@@ -18,7 +18,7 @@ import { createScheduler } from "../service";
 type Props = {
   countries: { id: number; name: string }[];
   platforms?: string[];
-  scheduler?: any; // 👈 Add
+  scheduler?: any;
 };
 
 export default function QuickScheduler({
@@ -40,10 +40,9 @@ export default function QuickScheduler({
   };
 
   const onSaveScheduler = async (payload: any) => {
-    if(payload.id) {
-      
+    if (payload.id) {
     } else {
-      await createScheduler({schedulers: payload});
+      await createScheduler({ schedulers: payload });
     }
   };
 
@@ -118,97 +117,101 @@ export default function QuickScheduler({
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  key={scheduler.COUNTRY_ID}
-                  className="border-b text-center align-top"
-                >
-                  <td className="py-4 px-4">
-                    <div className="w-full h-[180px] bg-accent rounded-2xl flex items-center justify-center text-white">
-                      {scheduler.COUNTRY_NAME}
-                    </div>
-                  </td>
-                  {platformKeys.map((platform) => {
-                    const data = scheduler[platform] || {};
-                    const timeInSeconds = data.UPLOAD_TIME ?? "";
-                    const hours = Math.floor(timeInSeconds / 3600);
-                    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-                    const formatted = timeInSeconds
-                      ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
-                      : "";
-                    return (
-                      <td key={platform} className="py-4 px-4">
-                        <div className="w-full h-[180px] flex flex-col items-center justify-center gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-28"
-                          >
-                            Schedule
-                          </Button>
+                {scheduler.map((scheduler: any) => (
+                  <tr
+                    key={scheduler.COUNTRY_ID}
+                    className="border-b text-center align-top"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="w-full h-[180px] bg-accent rounded-2xl flex items-center justify-center text-white">
+                        {scheduler.COUNTRY_NAME}
+                      </div>
+                    </td>
+                    {Object.keys(scheduler).filter(
+                      (key) => !["COUNTRY_ID", "COUNTRY_NAME"].includes(key),
+                      ).map((platform) => {
+                      const data = scheduler[platform] || {};
+                      const timeInSeconds = data.UPLOAD_TIME ?? "";
+                      const hours = Math.floor(timeInSeconds / 3600);
+                      const minutes = Math.floor((timeInSeconds % 3600) / 60);
+                      const formatted = timeInSeconds
+                        ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
+                        : "";
+                      return (
+                        <td key={platform} className="py-4 px-4">
+                          <div className="w-full h-[180px] flex flex-col items-center justify-center gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-28"
+                            >
+                              Schedule
+                            </Button>
 
-                          <Input
-                            type="time"
-                            value={formatted}
-                            className="h-9 w-28 text-center"
-                            onChange={(e) => {
-                              // convert back to seconds
-                              const [hh, mm] = e.target.value.split(":");
-                              const seconds =
-                                Number(hh) * 3600 + Number(mm) * 60;
-                            }}
-                          />
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-28"
-                          >
-                            Frequency
-                          </Button>
+                            <Input
+                              type="time"
+                              value={formatted}
+                              className="h-9 w-28 text-center"
+                              onChange={(e) => {
+                                // convert back to seconds
+                                const [hh, mm] = e.target.value.split(":");
+                                const seconds =
+                                  Number(hh) * 3600 + Number(mm) * 60;
+                              }}
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-28"
+                            >
+                              Frequency
+                            </Button>
 
-                          <Select
-                            value={data.UPLOAD_FREQUENCY}
-                            // onValueChange={(v) => {
-                            //   const found = dropdownCountries.find(
-                            //     (d) => String(d.id) === v,
-                            //   );
-                            //   const sources = countrySources
-                            //     ?.find((row) => row.ID === found?.id)
-                            //     ?.rssCategoriesUrls?.filter(
-                            //       (row: any) => row.STATUS === "active",
-                            //     )
-                            //     ?.map((row: any) => ({
-                            //       source_name: row.NAME,
-                            //       news_source: row.SOURCE_URL,
-                            //       source_type: "News",
-                            //     }));
-                            //   setForm((prev) => ({
-                            //     ...prev,
-                            //     country_id: v,
-                            //     name: found?.name || "",
-                            //     sources: sources,
-                            //   }));
-                            // }}
-                          >
-                            <SelectTrigger className="h-9 w-28 text-center">
-                              <SelectValue placeholder="Frequency" />
-                            </SelectTrigger>
+                            <Select
+                              value={data.UPLOAD_FREQUENCY}
+                              // onValueChange={(v) => {
+                              //   const found = dropdownCountries.find(
+                              //     (d) => String(d.id) === v,
+                              //   );
+                              //   const sources = countrySources
+                              //     ?.find((row) => row.ID === found?.id)
+                              //     ?.rssCategoriesUrls?.filter(
+                              //       (row: any) => row.STATUS === "active",
+                              //     )
+                              //     ?.map((row: any) => ({
+                              //       source_name: row.NAME,
+                              //       news_source: row.SOURCE_URL,
+                              //       source_type: "News",
+                              //     }));
+                              //   setForm((prev) => ({
+                              //     ...prev,
+                              //     country_id: v,
+                              //     name: found?.name || "",
+                              //     sources: sources,
+                              //   }));
+                              // }}
+                            >
+                              <SelectTrigger className="h-9 w-28 text-center">
+                                <SelectValue placeholder="Frequency" />
+                              </SelectTrigger>
 
-                            <SelectContent>
-                              {frequencyOptions.map((d) => (
-                                <SelectItem
-                                  key={d.value}
-                                  value={String(d.value)}
-                                >
-                                  {d.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
+                              <SelectContent>
+                                {frequencyOptions.map((d) => (
+                                  <SelectItem
+                                    key={d.value}
+                                    value={String(d.value)}
+                                  >
+                                    {d.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </CardContent>

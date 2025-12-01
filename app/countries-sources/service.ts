@@ -59,8 +59,8 @@ export async function updateSource(payload: any) {
   });
 }
 
-export async function getSchedulerByCountryID(countryID: number) {
-  const url = base + "upload-scheduler/country/" + countryID;
+export async function getSchedulers() {
+  const url = base + "upload-scheduler/active";
   const response = await fetch(url, {
     method: "GET",
     headers: headers

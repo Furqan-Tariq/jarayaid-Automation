@@ -6,7 +6,7 @@ import { Plus } from "lucide-react"
 import SponsorsTable from "./components/SponsorsTable"
 import SponsorDialog from "./components/SponsorDialog"
 import { Button } from "@/components/ui/button"
-import { createSponsor, getAllSponsors } from "./service"
+import { createSponsor, getAllSponsors, updateSponsor } from "./service"
 import toast from "react-hot-toast"
 import useGetCategories from "@/hooks/useGetCategories"
 
@@ -25,20 +25,20 @@ export default function SponsorsPage() {
   const [sponsors, setSponsors] = useState([])
   const [open, setOpen] = useState(false);
   const [countries, setCountries] = useState([]);
+  const [editingSponsor, setEditingSponsor] = useState<any | null>(null);
   
   const getCategories = useGetCategories();
   
   useEffect(() => {
     getCategories().then((res: any) => setCountries(res))
     getAllSponsors().then((res: any) => {
-      console.log(res)
       const normalized = res?.data?.map((s: any) => ({
         ...s,
         activePeriod: {
           start: s.startdate,
           end: s.enddate,
         },
-        countries: s.countries.map((c) => c.country_name), // ["Lebanon", "Egypt"]
+        countries: s.countries.map((c) => ({country_name: c.country_name, country_id: c.country_id})),
       }));
     
       setSponsors(normalized as any);
@@ -46,12 +46,25 @@ export default function SponsorsPage() {
   }, [])
   
   const handleSubmit = async (payload: any) => {
-    const response = await createSponsor(payload);
-    if(response.ok || response.status !== 201) {
-      return toast.error("Error while saving sponsor");
+    if (payload?.id) {
+      const response = await updateSponsor(payload);
+      if (!response.ok && response.status !== 200) {
+        return toast.error("Error while saving sponsor");
+      }
+      // update in state
+      setSponsors((prev) =>
+        prev.map((s) => (s.id === payload.id ? { ...s, ...payload } : s))
+      );
+      toast.success("Sponsor updated successfully");
+    } else {
+      const response = await createSponsor(payload);
+      if (!response.ok && response.status !== 200) {
+        return toast.error("Error while saving sponsor");
+      }
+      setSponsors((prev) => [payload, ...prev]);
+      toast.success("Sponsor created successfully");
     }
-    setSponsors((prev) => [payload, ...prev]);
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -73,11 +86,15 @@ export default function SponsorsPage() {
 
         <SponsorDialog
           open={open}
-          setOpen={setOpen}
-          onCreate={(data) => handleSubmit(data)}
+          setOpen={(v) => {
+            if (!v) setEditingSponsor(null); // reset when closed
+            setOpen(v);
+          }}
+          onCreate={handleSubmit}
           countries={countries}
+          editingSponsor={editingSponsor}
         />
-        <SponsorsTable sponsors={sponsors} setSponsors={setSponsors} />
+        <SponsorsTable sponsors={sponsors} setSponsors={setSponsors} setEditingSponsor={setEditingSponsor} setOpen={setOpen} />
       </div>
     </div>
   )

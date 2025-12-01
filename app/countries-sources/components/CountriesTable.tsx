@@ -2,7 +2,6 @@
 
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
 import { fetchJson } from "@/lib/fetchJson";
 import { update } from "../service";
 
@@ -23,14 +22,12 @@ type Props = {
   countries: Country[];
   setCountries: (c: Country[]) => void;
   setSelectedCountryId: (id: number) => void;
-  openEditCountry: (id: number) => void;
 };
 
 export default function CountriesTable({
   countries,
   setCountries,
   setSelectedCountryId,
-  openEditCountry,
 }: Props) {
   const toggleStatus = async (country: Country) => {
     const newStatus = country.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
@@ -66,29 +63,12 @@ export default function CountriesTable({
     }
   };
 
-  const deleteCountry = async (id: number) => {
-    if (!confirm("Delete this country?")) return;
-
-    try {
-      await fetchJson("admin-dashboard/deleteCountry", {
-        method: "POST",
-        body: JSON.stringify({ id }),
-      });
-
-      setCountries(countries.filter((c) => c.id !== id));
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete country");
-    }
-  };
-
   return (
-    <table className="w-full min-w-[1100px] text-sm">
-      <thead>
+    <table className="w-full min-w-[1100px] table-fixed text-sm">
+      <thead className="sticky top-0 bg-card z-10">
         <tr className="border-b border-border">
           <th className="text-left py-3 px-4 font-semibold w-12"></th>
           <th className="text-left py-3 px-4 font-semibold">Country</th>
-          <th className="text-left py-3 px-4 font-semibold">Slug</th>
           <th className="text-left py-3 px-4 font-semibold">Status</th>
           <th className="text-left py-3 px-4 font-semibold">Source</th>
         </tr>
@@ -106,9 +86,6 @@ export default function CountriesTable({
               />
             </td>
             <td className="py-3 px-4 font-medium">{country.country_name}</td>
-            <td className="py-3 px-4 text-muted-foreground text-xs">
-              {country.slug}
-            </td>
             <td className="py-3 px-4">
               <button
                 className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
@@ -128,18 +105,6 @@ export default function CountriesTable({
               >
                 View
               </Button>
-            </td>
-            <td className="py-3 px-4">
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEditCountry(country.id)}
-                  className="gap-1"
-                >
-                  <Edit2 size={16} />
-                </Button>
-              </div>
             </td>
           </tr>
         ))}

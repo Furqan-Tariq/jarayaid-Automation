@@ -9,9 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 type Props = {
   sponsors: any[]
   setSponsors: (fn: any) => void
+  setEditingSponsor: (fn: any) => void
+  setOpen: (fn: any) => void
 }
 
-export default function SponsorsTable({ sponsors, setSponsors }: Props) {
+export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor, setOpen }: Props) {
   return (
     <div className="rounded-lg border bg-card p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -61,8 +63,8 @@ export default function SponsorsTable({ sponsors, setSponsors }: Props) {
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
                     {sponsor.countries.map((c) => (
-                      <Badge key={c} variant="secondary">
-                        {c}
+                      <Badge key={c.country_id} variant="secondary">
+                        {c.country_name}
                       </Badge>
                     ))}
                   </div>
@@ -73,7 +75,14 @@ export default function SponsorsTable({ sponsors, setSponsors }: Props) {
                     <Button size="icon" variant="ghost">
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingSponsor(sponsor);
+                        setOpen(true);
+                      }}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button

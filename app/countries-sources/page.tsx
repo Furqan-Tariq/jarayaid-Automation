@@ -11,7 +11,7 @@ import SourcesTable from "./components/SourcesTable";
 import QuickScheduler from "./components/QuickScheduler";
 import {
   getAll,
-  getSchedulerByCountryID,
+  getSchedulers,
   getSourcesByCountryID,
 } from "./service";
 import useGetCategories from "@/hooks/useGetCategories";
@@ -20,29 +20,20 @@ type CountryDropdown = { id: number; name: string; arabicname?: string };
 type SavedCountry = {
   id: number;
   name: string;
-  slug?: string;
-  enabled?: boolean;
-  status?: "Manual" | "Auto";
+  // enabled?: boolean;
+  // status?: "Manual" | "Auto";
 };
 
 export default function CountriesSourcesPage() {
-  const [dropdownCountries, setDropdownCountries] = useState<CountryDropdown[]>(
-    [],
-  );
+
   const [countries, setCountries] = useState<SavedCountry[]>([]);
-  const [countryScheduler, setCountryScheduler] = useState<any>(null);
+  const [countryScheduler, setCountryScheduler] = useState<any[]>([]);
   const [sources, setSources] = useState<SavedCountry[]>([]);
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
     null,
   );
+  const [isCountriesAPICalled, setIsCountriesAPICalled] = useState(false);
 
-  const [countryDialogOpen, setCountryDialogOpen] = useState(false);
-  const [editingCountryId, setEditingCountryId] = useState<number | null>(null);
-
-  const [countrySources, setCountrySources] = useState<Record<number, any[]>>(
-    {},
-  );
-  
   const getCategories = useGetCategories();
 
   const loadSources = async () => {
@@ -54,21 +45,21 @@ export default function CountriesSourcesPage() {
     }
   };
 
-  const loadDropdownCountries = async () => {
+  const loadCountries = async () => {
     try {
       const res = await getCategories();
-      setDropdownCountries(res);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
-  const loadSavedCountries = async () => {
-    try {
-      const res: any = await getAll();
-      setCountries(res?.data || []);
-    } catch (e) {
-      console.error(e);
+      // convert API output to saved-country format
+      const mapped = res.map((c: any) => ({
+        id: c.id,
+        country_name: c.name,
+        // enabled: c.enabled ?? true
+      }));
+
+      setCountries(mapped);
+      setIsCountriesAPICalled(true);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -81,25 +72,49 @@ export default function CountriesSourcesPage() {
     }
   };
 
-  const loadScheduler = async (countryId: number) => {
+  const loadScheduler = async () => {
     try {
-      const res: any = await getSchedulerByCountryID(countryId as number);
-      setCountryScheduler(res?.data[0] || null);
+      const res: any = await getSchedulers();
+      const schedulerRows = res?.data || [];
+
+      const schedulerMap = schedulerRows.reduce((acc: any, row: any) => {
+        acc[row.COUNTRY_ID] = row;
+        return acc;
+      }, {});
+
+      const merged = countries.map((c) => {
+        const sched = schedulerMap[c.id];
+        return (
+          sched || {
+            COUNTRY_ID: c.id,
+            COUNTRY_NAME: c.country_name,
+            YOUTUBE: null,
+            FACEBOOK: null,
+            INSTAGRAM: null,
+            TIKTOK: null,
+          }
+        );
+      });
+  
+      setCountryScheduler(merged);
     } catch (e) {
       console.error(e);
     }
   };
 
   useEffect(() => {
-    loadDropdownCountries();
-    loadSavedCountries();
-    loadSources();
+    loadCountries();
   }, []);
-
+  
+  useEffect(() => {
+    if(countries?.length > 0 && isCountriesAPICalled) {
+      loadScheduler();
+    }
+  },[countries, isCountriesAPICalled])
+  
   useEffect(() => {
     if (selectedCountryId) {
       loadSavedSources();
-      loadScheduler(selectedCountryId);
     }
   }, [selectedCountryId]);
 
@@ -114,20 +129,6 @@ export default function CountriesSourcesPage() {
             Select a country to view and manage its news sources
           </p>
         </div>
-
-        <CountryDialog
-          open={countryDialogOpen}
-          setOpen={setCountryDialogOpen}
-          dropdownCountries={dropdownCountries}
-          editingCountryId={editingCountryId}
-          onSaved={loadSavedCountries}
-          savedCountries={countries}
-          countrySources={countrySources}
-        >
-          <Button className="gap-2 bg-accent hover:bg-accent/90">
-            <Plus size={18} /> Add Country
-          </Button>
-        </CountryDialog>
       </div>
 
       <Card className="bg-card">
