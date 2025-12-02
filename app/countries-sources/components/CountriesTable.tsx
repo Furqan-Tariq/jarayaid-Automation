@@ -1,9 +1,7 @@
-"use client";
-
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { fetchJson } from "@/lib/fetchJson";
 import { update } from "../service";
+import React from 'react';
 
 type Country = {
   id: number;
@@ -24,7 +22,7 @@ type Props = {
   setSelectedCountryId: (id: number) => void;
 };
 
-export default function CountriesTable({
+function CountriesTable({
   countries,
   setCountries,
   setSelectedCountryId,
@@ -37,7 +35,7 @@ export default function CountriesTable({
       const payload = {
         id: country.id,
         status: newStatus,
-      }
+      };
       update(payload);
       setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
     } catch (e) {
@@ -45,7 +43,7 @@ export default function CountriesTable({
       alert("Failed to update status");
     }
   };
-  
+
   const changeScriptType = async (country: Country) => {
     const newType = country.type === "MANUAL" ? "AUTO" : "MANUAL";
     const updated = { ...country, type: newType };
@@ -54,7 +52,7 @@ export default function CountriesTable({
       const payload = {
         id: country.id,
         type: newType,
-      }
+      };
       update(payload);
       setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
     } catch (e) {
@@ -112,3 +110,4 @@ export default function CountriesTable({
     </table>
   );
 }
+export default React.memo(CountriesTable);

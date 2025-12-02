@@ -1,34 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { fetchJson } from "@/lib/fetchJson";
-import CountryDialog from "./components/CountryDialog";
 import CountriesTable from "./components/CountriesTable";
 import SourcesTable from "./components/SourcesTable";
 import QuickScheduler from "./components/QuickScheduler";
-import {
-  getAll,
-  getSchedulers,
-  getSourcesByCountryID,
-} from "./service";
+import { getAll, getSchedulers, getSourcesByCountryID } from "./service";
 import useGetCategories from "@/hooks/useGetCategories";
 
-type CountryDropdown = { id: number; name: string; arabicname?: string };
 type SavedCountry = {
   id: number;
-  name: string;
+  country_name: string;
   // enabled?: boolean;
   // status?: "Manual" | "Auto";
 };
 
-export default function CountriesSourcesPage() {
+const validPlatforms = ["TIKTOK", "FACEBOOK", "INSTAGRAM", "YOUTUBE"];
 
+export default function CountriesSourcesPage() {
   const [countries, setCountries] = useState<SavedCountry[]>([]);
   const [countryScheduler, setCountryScheduler] = useState<any[]>([]);
-  const [sources, setSources] = useState<SavedCountry[]>([]);
+  const [countrySchedulerCopy, setCountrySchedulerCopy] = useState("");
+  const [sources, setSources] = useState([]);
+  const [sourcesCopy, setSourcesCopy] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
     null,
   );
@@ -36,24 +31,22 @@ export default function CountriesSourcesPage() {
 
   const getCategories = useGetCategories();
 
-  const loadSources = async () => {
-    try {
-      const res: any = await fetchJson("admin-dashboard/getRssSources");
-      setCountrySources(res?.data || {});
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const loadCountries = async () => {
     try {
-      const res = await getCategories();
+      const [activeCountriesData, res] = await Promise.all([
+        getAll(),
+        getCategories(),
+      ]);
+      const activeList = activeCountriesData?.data || [];
 
-      // convert API output to saved-country format
-      const mapped = res.map((c: any) => ({
+      const activeMap = activeList.reduce((acc: any, item: any) => {
+        acc[item.country_id] = item.status;
+        return acc;
+      }, {});
+      const mapped: SavedCountry[] = res.map((c: any) => ({
         id: c.id,
         country_name: c.name,
-        // enabled: c.enabled ?? true
+        status: activeMap[c.id] ?? "INACTIVE",
       }));
 
       setCountries(mapped);
@@ -65,8 +58,30 @@ export default function CountriesSourcesPage() {
 
   const loadSavedSources = async () => {
     try {
-      const res: any = await getSourcesByCountryID(selectedCountryId as number);
-      setSources(res?.data || []);
+      const [activeSourcesData, response]: [any, any] = await Promise.all([
+        getSourcesByCountryID(selectedCountryId as number),
+        fetchJson("admin-dashboard/getRssSourcesByID/" + selectedCountryId),
+      ]);
+
+      const activeSources = activeSourcesData?.data;
+
+      const activeMap = activeSources.reduce((acc: any, item: any) => {
+        acc[item.jarayid_source_id] = item;
+        return acc;
+      }, {});
+
+      const sources = response?.data[0]?.rssCategoriesUrls?.map((row: any) => ({
+        id: row?.ID,
+        source: row?.NAME,
+        news_source: row?.SOURCE_URL,
+        status: activeMap[row?.ID]?.status ?? "INACTIVE",
+        article_count: activeMap[row?.ID]?.article_count || "",
+        sequence: activeMap[row?.ID]?.sequence || "",
+        type: activeMap[row?.ID]?.sequence || "",
+      }));
+
+      setSources(sources || []);
+      setSourcesCopy(JSON.stringify(sources));
     } catch (e) {
       console.error(e);
     }
@@ -78,7 +93,18 @@ export default function CountriesSourcesPage() {
       const schedulerRows = res?.data || [];
 
       const schedulerMap = schedulerRows.reduce((acc: any, row: any) => {
-        acc[row.COUNTRY_ID] = row;
+        // Filter valid platforms
+        const filtered = validPlatforms.reduce((obj: any, key: string) => {
+          obj[key] = row[key] ?? null;
+          return obj;
+        }, {});
+
+        acc[row.COUNTRY_ID] = {
+          COUNTRY_ID: row.COUNTRY_ID,
+          COUNTRY_NAME: row.COUNTRY_NAME,
+          ...filtered,
+        };
+
         return acc;
       }, {});
 
@@ -95,28 +121,69 @@ export default function CountriesSourcesPage() {
           }
         );
       });
-  
+
       setCountryScheduler(merged);
+      setCountrySchedulerCopy(JSON.stringify(merged));
     } catch (e) {
       console.error(e);
     }
   };
 
+  const handleSubmitSources = async () => {
+    const oldSources = JSON.parse(sourcesCopy);
+    const changedSources = sources.filter((source: any) =>
+      oldSources.some(
+        (oldSource: any) =>
+          source.article_count !== oldSource.article_count ||
+          source.sequence !== oldSource.sequence,
+      ),
+    );
+  };
+
+  const handleSubmitScheduler = async () => {
+    const oldScheduler = JSON.parse(countrySchedulerCopy);
+    const changed = countryScheduler.filter((row: any) => {
+      const old = oldScheduler.find(
+        (o: any) => o.COUNTRY_ID === row.COUNTRY_ID,
+      );
+      if (!old) return true;
+
+      // Check platform fields (time + frequency)
+      for (const platform of validPlatforms) {
+        if (row[platform] !== old[platform]) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+    
+    console.log(changed);
+  };
+
   useEffect(() => {
     loadCountries();
   }, []);
-  
+
   useEffect(() => {
-    if(countries?.length > 0 && isCountriesAPICalled) {
+    if (countries?.length > 0 && isCountriesAPICalled) {
       loadScheduler();
     }
-  },[countries, isCountriesAPICalled])
-  
+  }, [countries, isCountriesAPICalled]);
+
   useEffect(() => {
     if (selectedCountryId) {
       loadSavedSources();
     }
   }, [selectedCountryId]);
+
+  const canSubmitSources = useMemo(() => {
+    return JSON.stringify(sources) !== sourcesCopy;
+  }, [sources]);
+
+  const canSubmitScheduler = useMemo(() => {
+    return JSON.stringify(countryScheduler) !== countrySchedulerCopy;
+  }, [countryScheduler]);
 
   return (
     <div className="p-8 space-y-8">
@@ -143,10 +210,7 @@ export default function CountriesSourcesPage() {
             countries={countries}
             setCountries={setCountries}
             setSelectedCountryId={setSelectedCountryId}
-            openEditCountry={(id: number) => {
-              setEditingCountryId(id);
-              setCountryDialogOpen(true);
-            }}
+            openEditCountry={(id: number) => {}}
           />
         </CardContent>
       </Card>
@@ -158,10 +222,18 @@ export default function CountriesSourcesPage() {
           countrySources={sources}
           setCountrySources={setSources}
           reloadSources={loadSavedSources}
+          canSubmit={canSubmitSources}
+          handleSubmit={handleSubmitSources}
         />
       )}
 
-      <QuickScheduler countries={countries} scheduler={countryScheduler} />
+      <QuickScheduler
+        countries={countries}
+        scheduler={countryScheduler}
+        setScheduler={setCountryScheduler}
+        canSubmitScheduler={canSubmitScheduler}
+        handleSubmit={handleSubmitScheduler}
+      />
     </div>
   );
 }

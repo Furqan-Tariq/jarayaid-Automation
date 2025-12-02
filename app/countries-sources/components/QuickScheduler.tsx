@@ -1,9 +1,7 @@
-"use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useMemo, useState } from "react";
 import {
   Select,
   SelectTrigger,
@@ -11,40 +9,25 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import SchedulerDialog from "./QuickSchedulerDialog";
-import { Plus, Edit2, Trash2 } from "lucide-react";
-import { createScheduler } from "../service";
+import React from 'react';
 
 type Props = {
   countries: { id: number; name: string }[];
   platforms?: string[];
   scheduler?: any;
+  setScheduler: () => void;
+  canSubmitScheduler: boolean;
+  handleSubmit: () => void;
 };
 
-export default function QuickScheduler({
+function QuickScheduler({
   countries,
   platforms = ["YouTube", "Instagram", "Facebook", "TikTok"],
   scheduler,
+  setScheduler,
+  canSubmitScheduler,
+  handleSubmit
 }: Props) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogData, setDialogData] = useState<any>(null);
-
-  const handleEdit = (platform: string, data: any) => {
-    setDialogData({
-      country_id: scheduler.COUNTRY_ID,
-      platform,
-      upload_time: data.UPLOAD_TIME ?? null,
-      upload_frequency: data.UPLOAD_FREQUENCY ?? null,
-    });
-    setDialogOpen(true);
-  };
-
-  const onSaveScheduler = async (payload: any) => {
-    if (payload.id) {
-    } else {
-      await createScheduler({ schedulers: payload });
-    }
-  };
 
   const secondsToHHMM = (sec: number) => {
     if (!sec && sec !== 0) return "";
@@ -61,15 +44,6 @@ export default function QuickScheduler({
     return hh * 3600 + mm * 60;
   };
 
-  const platformKeys = useMemo(() => {
-    if (scheduler) {
-      return Object.keys(scheduler).filter(
-        (key) => !["COUNTRY_ID", "COUNTRY_NAME"].includes(key),
-      );
-    }
-    return [];
-  }, [scheduler]);
-
   const frequencyOptions = [
     {
       label: "Daily",
@@ -84,6 +58,28 @@ export default function QuickScheduler({
       value: "MONTHLY",
     },
   ];
+  
+  const updateScheduler = (
+    countryIndex: number,
+    platformKey: string,
+    fieldKey: string,
+    value: any
+  ) => {
+    setScheduler((prev: any[]) => {
+      const copy = structuredClone(prev); // safe deep clone
+  
+      // ensure object paths exist
+      if (!copy[countryIndex][platformKey]) {
+        copy[countryIndex][platformKey] = {};
+      }
+  
+      // update value
+      copy[countryIndex][platformKey][fieldKey] = value;
+  
+      return copy;
+    });
+  };
+
 
   return (
     <>
@@ -91,12 +87,6 @@ export default function QuickScheduler({
         <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Quick Scheduler</CardTitle>
-            <Button
-              onClick={() => setDialogOpen(true)}
-              className="gap-2 bg-accent hover:bg-accent/90"
-            >
-              <Plus size={16} /> Add Scheduler
-            </Button>
           </CardHeader>
           <CardContent>
             <table className="w-full min-w-[1100px] table-fixed text-sm">
@@ -117,7 +107,7 @@ export default function QuickScheduler({
                 </tr>
               </thead>
               <tbody>
-                {scheduler.map((scheduler: any) => (
+                {scheduler.map((scheduler: any, rowIndex: number) => (
                   <tr
                     key={scheduler.COUNTRY_ID}
                     className="border-b text-center align-top"
@@ -153,10 +143,10 @@ export default function QuickScheduler({
                               value={formatted}
                               className="h-9 w-28 text-center"
                               onChange={(e) => {
-                                // convert back to seconds
                                 const [hh, mm] = e.target.value.split(":");
-                                const seconds =
-                                  Number(hh) * 3600 + Number(mm) * 60;
+                                const seconds = Number(hh) * 3600 + Number(mm) * 60;
+                              
+                                updateScheduler(rowIndex, platform, "UPLOAD_TIME", seconds);
                               }}
                             />
                             <Button
@@ -169,27 +159,9 @@ export default function QuickScheduler({
 
                             <Select
                               value={data.UPLOAD_FREQUENCY}
-                              // onValueChange={(v) => {
-                              //   const found = dropdownCountries.find(
-                              //     (d) => String(d.id) === v,
-                              //   );
-                              //   const sources = countrySources
-                              //     ?.find((row) => row.ID === found?.id)
-                              //     ?.rssCategoriesUrls?.filter(
-                              //       (row: any) => row.STATUS === "active",
-                              //     )
-                              //     ?.map((row: any) => ({
-                              //       source_name: row.NAME,
-                              //       news_source: row.SOURCE_URL,
-                              //       source_type: "News",
-                              //     }));
-                              //   setForm((prev) => ({
-                              //     ...prev,
-                              //     country_id: v,
-                              //     name: found?.name || "",
-                              //     sources: sources,
-                              //   }));
-                              // }}
+                              onValueChange={(v) => {
+                                updateScheduler(rowIndex, platform, "UPLOAD_FREQUENCY", v);
+                              }}
                             >
                               <SelectTrigger className="h-9 w-28 text-center">
                                 <SelectValue placeholder="Frequency" />
@@ -214,17 +186,20 @@ export default function QuickScheduler({
                 ))}
               </tbody>
             </table>
+            <div className="w-full flex justify-end pt-5">            
+              <Button
+                className="bg-accent hover:bg-accent/90 hover:cursor-pointer"
+                disabled={!canSubmitScheduler}
+                onClick={handleSubmit}
+              >
+                Save Scheduler
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
-      <SchedulerDialog
-        open={dialogOpen}
-        setOpen={setDialogOpen}
-        editRow={dialogData}
-        onSave={onSaveScheduler}
-        country={scheduler?.COUNTRY_NAME}
-        country_id={scheduler?.COUNTRY_ID}
-      />
     </>
   );
 }
+
+export default React.memo(QuickScheduler);

@@ -13,7 +13,7 @@ export async function post(payload: any) {
 }
 
 export async function getAll() {
-  const url = base + "country-sources";
+  const url = base + "country-sources/active";
   const response = await fetch(url, {
     method: "GET",
     headers: headers
@@ -26,6 +26,7 @@ export async function getAll() {
 
 export async function update(payload: any) {
   const url = base + "country-sources/" + payload.id;
+  delete payload.id;
   return fetch(url, {
     method: "PUT",
     body: JSON.stringify(payload),

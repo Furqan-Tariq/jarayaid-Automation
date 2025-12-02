@@ -11,6 +11,7 @@ import {
   Send,
   LogOut,
   BarChart3,
+  Settings,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -26,6 +27,7 @@ export default function Sidebar() {
     { id: "script-generation", label: "Script Generation", icon: Wand2, href: "/script-generation" },
     { id: "publishing", label: "Publishing", icon: Send, href: "/publishing" },
     { id: "social-rotations", label: "Social Rotations", icon: Send, href: "/social-rotations" },
+    { id: "configurations", label: "Script Configurations", icon: Settings, href: "/configurations" },
   ]
 
   return (
