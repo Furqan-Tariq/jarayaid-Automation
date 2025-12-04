@@ -24,7 +24,7 @@ export async function getAll() {
   return response.json();
 }
 
-export async function getActive() {
+export async function getActiveJoiningWords() {
   const url = base + "joining-words/active";
   const response = await fetch(url, {
     method: "GET",

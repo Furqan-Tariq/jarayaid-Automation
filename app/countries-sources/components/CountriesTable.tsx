@@ -1,18 +1,16 @@
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { update } from "../service";
+import { post, update } from "../service";
 import React from 'react';
+import toast from "react-hot-toast";
 
 type Country = {
   id: number;
   country_id: number;
   country_name: string;
   country_arabic_name: string;
-  slug: string;
   type: string;
-  operator: string;
-  datetime: string;
-  modified_datetime: string;
+  country_info_id: number | null
   status: "ACTIVE" | "INACTIVE";
 };
 
@@ -22,25 +20,48 @@ type Props = {
   setSelectedCountryId: (id: number) => void;
 };
 
+const operator = "admin";
+
 function CountriesTable({
   countries,
   setCountries,
   setSelectedCountryId,
 }: Props) {
+  
   const toggleStatus = async (country: Country) => {
-    const newStatus = country.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    const updated = { ...country, status: newStatus };
 
     try {
-      const payload = {
-        id: country.id,
-        status: newStatus,
-      };
-      update(payload);
-      setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
+      if(country?.country_info_id) {
+        const newStatus = country.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+        const updated = { ...country, status: newStatus };
+        const payload = {
+          id: country.country_info_id,
+          status: newStatus,
+        };
+        const res = await update(payload);
+        const responseJson = await res.json();
+        if(!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
+        setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
+        toast.success(responseJson?.message);
+      } else {
+        const payload = {
+          country_id: country?.id,
+          type: country?.type,
+          operator: operator
+        }
+        const res = await post(payload);
+        const responseJson = await res.json();
+        if(!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
+        // setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
+        toast.success(responseJson?.message);
+      }
     } catch (e) {
       console.error(e);
-      alert("Failed to update status");
+      toast.error("Failed to update status");
     }
   };
 
@@ -50,11 +71,16 @@ function CountriesTable({
 
     try {
       const payload = {
-        id: country.id,
+        id: country.country_info_id,
         type: newType,
       };
-      update(payload);
+      const res = await update(payload);
+      const responseJson = await res.json();
+      if(!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+        throw new Error("Error occured");
+      }
       setCountries(countries.map((c) => (c.id === country.id ? updated : c)));
+      toast.success(responseJson?.message);
     } catch (e) {
       console.error(e);
       alert("Failed to update status");

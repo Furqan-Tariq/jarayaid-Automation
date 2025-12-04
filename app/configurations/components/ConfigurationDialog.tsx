@@ -82,7 +82,7 @@ function ConfigurationDialog({
       <DialogContent className="max-w-md rounded-xl">
         <DialogHeader>
           <DialogTitle>
-            {editingConfig ? "Edit" : "Add"} Joining Word
+            {editingConfig ? "Edit" : "Add"} Configuration
           </DialogTitle>
           <DialogDescription>Fill in details.</DialogDescription>
         </DialogHeader>
@@ -134,7 +134,7 @@ function ConfigurationDialog({
             className="bg-accent hover:bg-accent/90"
             onClick={handleSubmit}
           >
-            {editingConfig ? "Edit" : "Add"} Message
+            {editingConfig ? "Edit" : "Add"} Configuration
           </Button>
         </DialogFooter>
       </DialogContent>

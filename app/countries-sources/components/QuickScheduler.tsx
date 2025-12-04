@@ -9,6 +9,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import React from 'react';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
   setScheduler: () => void;
   canSubmitScheduler: boolean;
   handleSubmit: () => void;
+  toggleSchedule: (row: any) => void;
 };
 
 function QuickScheduler({
@@ -26,7 +28,8 @@ function QuickScheduler({
   scheduler,
   setScheduler,
   canSubmitScheduler,
-  handleSubmit
+  handleSubmit,
+  toggleSchedule
 }: Props) {
 
   const secondsToHHMM = (sec: number) => {
@@ -113,12 +116,17 @@ function QuickScheduler({
                     className="border-b text-center align-top"
                   >
                     <td className="py-4 px-4">
-                      <div className="w-full h-[180px] bg-accent rounded-2xl flex items-center justify-center text-white">
+                      <div className="w-full h-[180px] bg-accent rounded-2xl flex items-center justify-center text-white flex-col gap-1">
                         {scheduler.COUNTRY_NAME}
+                        <Switch
+                          checked={scheduler.status === "ACTIVE"}
+                          className="!bg-[#ffffff99]"
+                          onCheckedChange={() => toggleSchedule(scheduler)}
+                        />
                       </div>
                     </td>
                     {Object.keys(scheduler).filter(
-                      (key) => !["COUNTRY_ID", "COUNTRY_NAME"].includes(key),
+                      (key) => !["COUNTRY_ID", "COUNTRY_NAME", "rowExists", "status"].includes(key),
                       ).map((platform) => {
                       const data = scheduler[platform] || {};
                       const timeInSeconds = data.UPLOAD_TIME ?? "";

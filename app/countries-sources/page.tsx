@@ -6,8 +6,19 @@ import { fetchJson } from "@/lib/fetchJson";
 import CountriesTable from "./components/CountriesTable";
 import SourcesTable from "./components/SourcesTable";
 import QuickScheduler from "./components/QuickScheduler";
-import { getAll, getSchedulers, getSourcesByCountryID } from "./service";
+import {
+  createScheduler,
+  createSource,
+  getAll,
+  getSchedulers,
+  getSourcesByCountryID,
+  updateSchedule,
+  updateSource,
+  updateSources,
+} from "./service";
 import useGetCategories from "@/hooks/useGetCategories";
+import { getActiveJoiningWords } from "../configurations/service";
+import toast from "react-hot-toast";
 
 type SavedCountry = {
   id: number;
@@ -18,11 +29,14 @@ type SavedCountry = {
 
 const validPlatforms = ["TIKTOK", "FACEBOOK", "INSTAGRAM", "YOUTUBE"];
 
+const operator = "admin";
+
 export default function CountriesSourcesPage() {
   const [countries, setCountries] = useState<SavedCountry[]>([]);
   const [countryScheduler, setCountryScheduler] = useState<any[]>([]);
   const [countrySchedulerCopy, setCountrySchedulerCopy] = useState("");
   const [sources, setSources] = useState([]);
+  const [joininWords, setJoininWords] = useState([]);
   const [sourcesCopy, setSourcesCopy] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
     null,
@@ -40,13 +54,15 @@ export default function CountriesSourcesPage() {
       const activeList = activeCountriesData?.data || [];
 
       const activeMap = activeList.reduce((acc: any, item: any) => {
-        acc[item.country_id] = item.status;
+        acc[item.country_id] = item;
         return acc;
       }, {});
       const mapped: SavedCountry[] = res.map((c: any) => ({
         id: c.id,
         country_name: c.name,
-        status: activeMap[c.id] ?? "INACTIVE",
+        status: activeMap[c.id]?.status ?? "INACTIVE",
+        country_info_id: activeMap[c.id]?.id ?? null,
+        type: activeMap[c.id]?.type ?? "AUTO",
       }));
 
       setCountries(mapped);
@@ -69,7 +85,7 @@ export default function CountriesSourcesPage() {
         acc[item.jarayid_source_id] = item;
         return acc;
       }, {});
-
+      console.log(activeMap)
       const sources = response?.data[0]?.rssCategoriesUrls?.map((row: any) => ({
         id: row?.ID,
         source: row?.NAME,
@@ -77,10 +93,13 @@ export default function CountriesSourcesPage() {
         status: activeMap[row?.ID]?.status ?? "INACTIVE",
         article_count: activeMap[row?.ID]?.article_count || "",
         sequence: activeMap[row?.ID]?.sequence || "",
-        type: activeMap[row?.ID]?.sequence || "",
+        type: activeMap[row?.ID]?.type || "",
+        joining_words: activeMap[row?.ID]?.joining_words || "",
+        intro_music_path: activeMap[row?.ID]?.intro_music_path || "",
+        source_id: activeMap[row?.ID]?.id || null, // id from automation db
       }));
 
-      setSources(sources || []);
+      setSources(sources);
       setSourcesCopy(JSON.stringify(sources));
     } catch (e) {
       console.error(e);
@@ -100,8 +119,7 @@ export default function CountriesSourcesPage() {
         }, {});
 
         acc[row.COUNTRY_ID] = {
-          COUNTRY_ID: row.COUNTRY_ID,
-          COUNTRY_NAME: row.COUNTRY_NAME,
+          ...row,
           ...filtered,
         };
 
@@ -110,18 +128,17 @@ export default function CountriesSourcesPage() {
 
       const merged = countries.map((c) => {
         const sched = schedulerMap[c.id];
-        return (
-          sched || {
-            COUNTRY_ID: c.id,
-            COUNTRY_NAME: c.country_name,
-            YOUTUBE: null,
-            FACEBOOK: null,
-            INSTAGRAM: null,
-            TIKTOK: null,
-          }
-        );
+        return {
+          COUNTRY_ID: c.id,
+          COUNTRY_NAME: c.country_name,
+          YOUTUBE: sched?.YOUTUBE ?? null,
+          FACEBOOK: sched?.FACEBOOK ?? null,
+          INSTAGRAM: sched?.INSTAGRAM ?? null,
+          TIKTOK: sched?.TIKTOK ?? null,
+          status: sched?.STATUS ?? "INACTIVE",
+          rowExists: sched ? true : false,
+        };
       });
-
       setCountryScheduler(merged);
       setCountrySchedulerCopy(JSON.stringify(merged));
     } catch (e) {
@@ -129,15 +146,56 @@ export default function CountriesSourcesPage() {
     }
   };
 
+  const loadJoiningWords = async () => {
+    try {
+      const res = await getActiveJoiningWords();
+      setJoininWords(
+        res?.data?.map((row: any) => ({
+          value: row.id,
+          label: row.joining_word,
+        })),
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const handleSubmitSources = async () => {
     const oldSources = JSON.parse(sourcesCopy);
-    const changedSources = sources.filter((source: any) =>
-      oldSources.some(
-        (oldSource: any) =>
-          source.article_count !== oldSource.article_count ||
-          source.sequence !== oldSource.sequence,
-      ),
-    );
+    const changedSources = sources.filter((source: any) => {
+      const old = oldSources.find((o: any) => o.id === source.id);
+      if (!old) return true;
+      return (
+        source.article_count !== old.article_count ||
+        source.sequence !== old.sequence ||
+        source.type !== old.type ||
+        source.joining_words !== old.joining_words ||
+        source.intro_music_path !== old.intro_music_path
+      );
+    });
+
+    const payload = changedSources.map((source: any) => {
+      const row = {
+        ...source,
+        jarayid_source_id: source?.id,
+        // jarayid_country_id: selectedCountryId,
+        id: source?.source_id,
+      };
+      delete row?.status;
+      delete row?.source_id;
+      return row;
+    });
+    
+    try {
+      const res = await updateSources({ items: payload });
+      const responseJson = await res.json();
+      if (!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+        throw new Error("Error occured");
+      }
+      toast.success(responseJson?.message);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const handleSubmitScheduler = async () => {
@@ -148,7 +206,6 @@ export default function CountriesSourcesPage() {
       );
       if (!old) return true;
 
-      // Check platform fields (time + frequency)
       for (const platform of validPlatforms) {
         if (row[platform] !== old[platform]) {
           return true;
@@ -157,12 +214,159 @@ export default function CountriesSourcesPage() {
 
       return false;
     });
-    
+
     console.log(changed);
+  };
+
+  const toggleSourceStatus = async (row: any) => {
+    try {
+      let res = null;
+      // update
+      if (row?.source_id) {
+        const payload = {
+          id: row?.source_id,
+          status: row?.status === "INACTIVE" ? "ACTIVE" : "INACTIVE",
+        };
+        res = await updateSource(payload);
+        if (res) {
+          const responseJson = await res.json();
+
+          if (
+            !res.ok ||
+            res.status !== 200 ||
+            responseJson?.statusCode !== 200
+          ) {
+            throw new Error("Error occured");
+          }
+          toast.success(responseJson?.message);
+          const updatedSources = [...sources].map((s) =>
+            s.id === row.id ? { ...row, status: payload.status } : s,
+          ) as never[];
+          setSources(updatedSources);
+          setSourcesCopy(JSON.stringify(updatedSources));
+        } else {
+          throw Error("Error Occured");
+        }
+      }
+      // create
+      else {
+        const payload = {
+          jarayid_country_id: selectedCountryId,
+          jarayid_source_id: row?.id,
+          operator: operator,
+        };
+        res = await createSource(payload);
+        if (res) {
+          const responseJson = await res.json();
+
+          if (
+            !res.ok ||
+            res.status !== 201 ||
+            responseJson?.statusCode !== 200
+          ) {
+            throw new Error("Error occured");
+          }
+          const updatedSources = [...sources].map((s) =>
+            s.id === row.id
+              ? { ...row, status: "ACTIVE", source_id: responseJson?.data?.id }
+              : s,
+          ) as never[];
+          setSources(updatedSources);
+          setSourcesCopy(JSON.stringify(updatedSources));
+          toast.success(responseJson?.message);
+        } else {
+          throw Error("Error Occured");
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const toggleSchedule = async (row: any) => {
+    try {
+      let res = null;
+      // update
+      if (row?.rowExists) {
+        const payload = {
+          country_id: row?.COUNTRY_ID,
+          status: row?.status === "INACTIVE" ? "ACTIVE" : "INACTIVE",
+          operator: operator,
+        };
+        res = await updateSchedule(payload);
+        if (res) {
+          const responseJson = await res.json();
+
+          if (
+            !res.ok ||
+            res.status !== 200 ||
+            responseJson?.statusCode !== 200
+          ) {
+            throw new Error("Error occured");
+          }
+          toast.success(responseJson?.message);
+          const updatedSchedulers = countryScheduler.map((s) =>
+            s.COUNTRY_ID === row.COUNTRY_ID
+              ? { ...row, status: payload.status }
+              : s,
+          );
+          setCountryScheduler(updatedSchedulers);
+          setCountrySchedulerCopy(JSON.stringify(updatedSchedulers));
+        } else {
+          throw Error("Error Occured");
+        }
+      }
+      // create
+      else {
+        const payload = {
+          schedulers: [
+            {
+              country_id: row?.COUNTRY_ID,
+              operator: operator,
+              key: "UPLOAD_TIME",
+              value: null,
+              platform: "YOUTUBE",
+            },
+            {
+              country_id: row?.COUNTRY_ID,
+              operator: operator,
+              key: "UPLOAD_FREQUENCY",
+              value: null,
+              platform: "YOUTUBE",
+            },
+          ],
+        };
+        res = await createScheduler(payload);
+        if (res) {
+          const responseJson = await res.json();
+
+          if (
+            !res.ok ||
+            res.status !== 201 ||
+            responseJson?.statusCode !== 201
+          ) {
+            throw new Error("Error occured");
+          }
+          toast.success(responseJson?.message);
+          const updatedSchedulers = countryScheduler.map((s) =>
+            s.COUNTRY_ID === row.COUNTRY_ID
+              ? { ...row, status: "ACTIVE", rowExists: true }
+              : s,
+          );
+          setCountryScheduler(updatedSchedulers);
+          setCountrySchedulerCopy(JSON.stringify(updatedSchedulers));
+        } else {
+          throw Error("Error Occured");
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   useEffect(() => {
     loadCountries();
+    loadJoiningWords();
   }, []);
 
   useEffect(() => {
@@ -223,7 +427,9 @@ export default function CountriesSourcesPage() {
           setCountrySources={setSources}
           reloadSources={loadSavedSources}
           canSubmit={canSubmitSources}
+          joiningWords={joininWords}
           handleSubmit={handleSubmitSources}
+          toggleStatus={toggleSourceStatus}
         />
       )}
 
@@ -233,6 +439,7 @@ export default function CountriesSourcesPage() {
         setScheduler={setCountryScheduler}
         canSubmitScheduler={canSubmitScheduler}
         handleSubmit={handleSubmitScheduler}
+        toggleSchedule={toggleSchedule}
       />
     </div>
   );

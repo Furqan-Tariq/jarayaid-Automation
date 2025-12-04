@@ -3,6 +3,7 @@ import { getHeaders, getServerRootURL } from "@/lib/utils";
 const headers = getHeaders();
 const base = getServerRootURL();
 
+// create country
 export async function post(payload: any) {
   const url = base + "country-sources";
   return fetch(url, {
@@ -12,8 +13,17 @@ export async function post(payload: any) {
   });
 }
 
+export async function createSource(payload: any) {
+  const url = base + "country-sources/source";
+  return fetch(url, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: headers
+  });
+}
+
 export async function getAll() {
-  const url = base + "country-sources/active";
+  const url = base + "country-sources";
   const response = await fetch(url, {
     method: "GET",
     headers: headers
@@ -61,7 +71,7 @@ export async function updateSource(payload: any) {
 }
 
 export async function getSchedulers() {
-  const url = base + "upload-scheduler/active";
+  const url = base + "upload-scheduler";
   const response = await fetch(url, {
     method: "GET",
     headers: headers
@@ -76,6 +86,28 @@ export async function createScheduler(payload: any) {
   const url = base + "upload-scheduler";
   return fetch(url, {
     method: "POST",
+    body: JSON.stringify(payload),
+    headers: headers
+  });
+}
+
+export async function updateSchedule(payload: any) {
+  const url = base + "upload-scheduler/country/" + payload.country_id;
+  delete payload.country_id;
+  delete payload.country_info_id;
+  delete payload.datetime;
+  delete payload.modified_datetime;
+  return fetch(url, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+    headers: headers
+  });
+}
+
+export async function updateSources(payload: any) {
+  const url = base + "country-sources/bulk/sources";
+  return fetch(url, {
+    method: "PUT",
     body: JSON.stringify(payload),
     headers: headers
   });
