@@ -24,6 +24,18 @@ export async function getAllSponsors() {
   return response.json();
 }
 
+export async function getActiveSponsors() {
+  const url = base + "sponsor/active";
+  const response = await fetch(url, {
+    method: "GET",
+    headers: headers
+  });
+  if(!response.ok || response.status !== 200) {
+    throw new Error("Error while getting saved countries")
+  }
+  return response.json();
+}
+
 export async function updateSponsor(payload: any) {
   const url = base + "sponsor/" + payload.id;
   delete payload.id

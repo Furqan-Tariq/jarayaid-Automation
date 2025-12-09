@@ -149,7 +149,7 @@ function SourcesTable({
                       </td>
                       <td className="py-3 px-4">
                         <Select
-                          value={row.joining_word}
+                          value={row.joining_words?.toString()}
                           onValueChange={(v) =>
                             updateRow(idx, "joining_words", v)
                           }

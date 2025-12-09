@@ -8,12 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type Props = {
   sponsors: any[]
-  setSponsors: (fn: any) => void
   setEditingSponsor: (fn: any) => void
-  setOpen: (fn: any) => void
+  setOpen: (fn: any) => void,
+  handleDeleteSponsor: (row: any) => void
 }
 
-export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor, setOpen }: Props) {
+export default function SponsorsTable({ sponsors, setEditingSponsor, setOpen, handleDeleteSponsor }: Props) {
   return (
     <div className="rounded-lg border bg-card p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -37,7 +37,7 @@ export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor
           </TableHeader>
 
           <TableBody>
-            {sponsors.map((sponsor) => (
+            {sponsors?.map((sponsor) => (
               <TableRow key={sponsor.id}>
                 <TableCell>
                   <div className="relative h-16 w-16 overflow-hidden rounded-md bg-muted">
@@ -57,7 +57,7 @@ export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor
                 </TableCell>
 
                 <TableCell>
-                  {sponsor.activePeriod.start} → {sponsor.activePeriod.end}
+                  {sponsor.activePeriod?.start} → {sponsor.activePeriod?.end}
                 </TableCell>
 
                 <TableCell>
@@ -72,9 +72,6 @@ export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor
 
                 <TableCell>
                   <div className="flex justify-end gap-2">
-                    <Button size="icon" variant="ghost">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"
@@ -89,10 +86,7 @@ export default function SponsorsTable({ sponsors, setSponsors, setEditingSponsor
                       size="icon"
                       variant="ghost"
                       className="text-destructive"
-                      onClick={() =>
-                        setSponsors((prev: any) => prev.filter((s: any) => s.id !== sponsor.id))
-                      }
-                    >
+                      onClick={() => handleDeleteSponsor(sponsor)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

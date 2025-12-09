@@ -53,7 +53,7 @@ function CountriesTable({
         }
         const res = await post(payload);
         const responseJson = await res.json();
-        if(!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+        if(!res.ok || res.status !== 201 || responseJson?.statusCode !== 201) {
           throw new Error("Error occured");
         }
         // setCountries(countries.map((c) => (c.id === country.id ? updated : c)));

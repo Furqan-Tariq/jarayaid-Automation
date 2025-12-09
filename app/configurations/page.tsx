@@ -7,7 +7,7 @@ import JoiningWordDialog from "./components/JoiningWordDialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import {
-    addConfig,
+  addConfig,
   createJoiningWord,
   getActive,
   getAll,
@@ -19,6 +19,7 @@ import {
 } from "./service";
 import ConfigurationsTable from "./components/ConfigurationsTable";
 import ConfigurationDialog from "./components/ConfigurationDialog";
+import toast from "react-hot-toast";
 
 const operator = "admin";
 
@@ -26,7 +27,7 @@ export default function ScriptConfigurations() {
   const [joiningWords, setJoiningWords] = useState([]);
   const [openScriptConfig, setOpenScriptConfig] = useState(false);
   const [editingJoiningWord, setEditingJoiningWord] = useState(null);
-  
+
   const [configurations, setConfigurations] = useState([]);
   const [openConfiguration, setOpenConfiguration] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
@@ -41,11 +42,18 @@ export default function ScriptConfigurations() {
       try {
         // update word
         const res = await updateJoiningWord(data);
+        const responseJson = await res?.json();
+        if (!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
         setJoiningWords((prev) =>
           prev.map((w) =>
-            w.id === data.id ? { ...w, joining_word: data.joining_word } : w,
+            w.id == responseJson.data.id
+              ? { ...w, joining_word: responseJson.data.joining_word }
+              : w,
           ),
         );
+        toast.success(responseJson?.message);
       } catch (e) {
         console.log(e);
       }
@@ -53,13 +61,19 @@ export default function ScriptConfigurations() {
       try {
         // create new word
         const res = await createJoiningWord({ ...data, operator: operator });
+        const responseJson = await res?.json();
+        if (!res.ok || res.status !== 201 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
         setJoiningWords((prev) => [
           ...prev,
           {
-            id: Date.now(), // temporary id for UI
+            id: responseJson?.data?.id,
             joining_word: data.joining_word,
+            status: responseJson?.data?.status,
           },
         ]);
+        toast.success(responseJson?.message);
       } catch (e) {
         console.log(e);
       }
@@ -68,12 +82,29 @@ export default function ScriptConfigurations() {
     setEditingJoiningWord(null);
     setOpenScriptConfig(false);
   };
-  
+
   const handleCreateOrEditConfig = async (data: any, isEdit = false) => {
     if (isEdit) {
       try {
         // update word
         const res = await updateConfig(data);
+        const responseJson = await res?.json();
+        if (!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
+        setConfigurations((prev) =>
+          prev.map((w) =>
+            w.id == responseJson.data.id
+              ? {
+                  ...w,
+                  key: responseJson.data.key,
+                  sequence: responseJson.data.key,
+                  value: responseJson.data.value,
+                }
+              : w,
+          ),
+        );
+        toast.success(responseJson?.message);
       } catch (e) {
         console.log(e);
       }
@@ -81,6 +112,21 @@ export default function ScriptConfigurations() {
       try {
         // create new word
         const res = await addConfig({ ...data, operator: operator });
+        const responseJson = await res?.json();
+        if (!res.ok || res.status !== 201 || responseJson?.statusCode !== 200) {
+          throw new Error("Error occured");
+        }
+        setConfigurations((prev) => [
+          ...prev,
+          {
+            id: responseJson?.data?.id,
+            key: responseJson.data.key,
+            sequence: responseJson.data.key,
+            value: responseJson.data.value,
+            status: responseJson.data.status,
+          },
+        ]);
+        toast.success(responseJson?.message);
       } catch (e) {
         console.log(e);
       }
@@ -94,7 +140,7 @@ export default function ScriptConfigurations() {
     setEditingJoiningWord(row);
     setOpenScriptConfig(true);
   };
-  
+
   const handleEditConfig = (row: any) => {
     setEditingConfig(row);
     setOpenConfiguration(true);
@@ -107,11 +153,21 @@ export default function ScriptConfigurations() {
         status: status,
         operator,
       });
+      const responseJson = await res?.json();
+      if (!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+        throw new Error("Error occured");
+      }
+      const updatedRow = joiningWords.find((word) => word.id === id);
+      const updatedJoiningWords = [...joiningWords].map((j) =>
+        j.id === updatedRow.id ? { ...updatedRow, status: status } : j,
+      ) as never[];
+      setJoiningWords(updatedJoiningWords);
+      toast.success(responseJson?.message);
     } catch (e) {
       console.log(e);
     }
   };
-  
+
   const handleChangeConfigStatus = async (id: number, status: string) => {
     try {
       const res = await updateConfigStatus({
@@ -119,6 +175,16 @@ export default function ScriptConfigurations() {
         status: status,
         operator,
       });
+      const responseJson = await res?.json();
+      if (!res.ok || res.status !== 200 || responseJson?.statusCode !== 200) {
+        throw new Error("Error occured");
+      }
+      const updatedRow = configurations.find((config) => config.id === id);
+      const updatedConfigurations = [...configurations].map((j) =>
+        j.id === updatedRow.id ? { ...updatedRow, status: status } : j,
+      ) as never[];
+      setConfigurations(updatedConfigurations);
+      toast.success(responseJson?.message);
     } catch (e) {
       console.log(e);
     }
@@ -132,7 +198,7 @@ export default function ScriptConfigurations() {
       console.log(e);
     }
   };
-  
+
   const loadConfigurations = async () => {
     try {
       const res = await getAllConfigurations();
@@ -184,14 +250,14 @@ export default function ScriptConfigurations() {
           />
         </CardContent>
       </Card>
-      
+
       <ConfigurationDialog
         open={openConfiguration}
         setOpen={setOpenConfiguration}
         onCreate={handleCreateOrEditConfig}
         editingConfig={editingConfig}
       />
-      
+
       <Card className="bg-card mt-4">
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Configurations</CardTitle>
@@ -203,7 +269,7 @@ export default function ScriptConfigurations() {
             }}
           >
             <Plus className="h-4 w-4" />
-            Add Joining Words
+            Add Configurations
           </Button>
         </CardHeader>
 

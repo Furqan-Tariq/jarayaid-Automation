@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchJson } from "@/lib/fetchJson";
 import CountriesTable from "./components/CountriesTable";
@@ -41,6 +41,7 @@ export default function CountriesSourcesPage() {
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
     null,
   );
+  const sourcesRef = useRef<HTMLDivElement | null>(null);
   const [isCountriesAPICalled, setIsCountriesAPICalled] = useState(false);
 
   const getCategories = useGetCategories();
@@ -85,7 +86,7 @@ export default function CountriesSourcesPage() {
         acc[item.jarayid_source_id] = item;
         return acc;
       }, {});
-      console.log(activeMap)
+
       const sources = response?.data[0]?.rssCategoriesUrls?.map((row: any) => ({
         id: row?.ID,
         source: row?.NAME,
@@ -96,6 +97,7 @@ export default function CountriesSourcesPage() {
         type: activeMap[row?.ID]?.type || "",
         joining_words: activeMap[row?.ID]?.joining_words || "",
         intro_music_path: activeMap[row?.ID]?.intro_music_path || "",
+        jarayid_rss_source_id: row?.SOURCE_ID,
         source_id: activeMap[row?.ID]?.id || null, // id from automation db
       }));
 
@@ -177,15 +179,19 @@ export default function CountriesSourcesPage() {
     const payload = changedSources.map((source: any) => {
       const row = {
         ...source,
+        joining_words:
+          source?.joining_words == "" ? null : parseInt(source?.joining_words),
         jarayid_source_id: source?.id,
-        // jarayid_country_id: selectedCountryId,
+        jarayid_country_id: selectedCountryId
+          ? parseInt(selectedCountryId)
+          : null,
         id: source?.source_id,
       };
       delete row?.status;
       delete row?.source_id;
       return row;
     });
-    
+
     try {
       const res = await updateSources({ items: payload });
       const responseJson = await res.json();
@@ -225,6 +231,7 @@ export default function CountriesSourcesPage() {
       if (row?.source_id) {
         const payload = {
           id: row?.source_id,
+          jarayid_rss_source_id: row?.jarayid_rss_source_id,
           status: row?.status === "INACTIVE" ? "ACTIVE" : "INACTIVE",
         };
         res = await updateSource(payload);
@@ -377,7 +384,11 @@ export default function CountriesSourcesPage() {
 
   useEffect(() => {
     if (selectedCountryId) {
-      loadSavedSources();
+      loadSavedSources().then(() => {
+        setTimeout(() => {
+          sourcesRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      });
     }
   }, [selectedCountryId]);
 
@@ -420,17 +431,19 @@ export default function CountriesSourcesPage() {
       </Card>
 
       {selectedCountryId && (
-        <SourcesTable
-          countryId={selectedCountryId}
-          countries={countries}
-          countrySources={sources}
-          setCountrySources={setSources}
-          reloadSources={loadSavedSources}
-          canSubmit={canSubmitSources}
-          joiningWords={joininWords}
-          handleSubmit={handleSubmitSources}
-          toggleStatus={toggleSourceStatus}
-        />
+        <div ref={sourcesRef}>
+          <SourcesTable
+            countryId={selectedCountryId}
+            countries={countries}
+            countrySources={sources}
+            setCountrySources={setSources}
+            reloadSources={loadSavedSources}
+            canSubmit={canSubmitSources}
+            joiningWords={joininWords}
+            handleSubmit={handleSubmitSources}
+            toggleStatus={toggleSourceStatus}
+          />
+        </div>
       )}
 
       <QuickScheduler

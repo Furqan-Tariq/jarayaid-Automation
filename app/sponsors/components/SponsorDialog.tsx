@@ -38,15 +38,13 @@ export default function SponsorDialog({
   setOpen,
   onCreate,
   countries,
-  editingSponsor
+  editingSponsor,
 }: Props) {
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [countriesDraft, setCountriesDraft] = useState<string[]>([]);
-  const [countryInput, setCountryInput] = useState("");
-  const [selectedCountries, setSelectedCountries] = useState([]);
+  const [selectedCountries, setSelectedCountries] = useState<any[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
 
@@ -55,7 +53,7 @@ export default function SponsorDialog({
   useEffect(() => {
     if (!open) reset();
   }, [open]);
-  
+
   useEffect(() => {
     if (open && editingSponsor) {
       setName(editingSponsor.name);
@@ -63,7 +61,7 @@ export default function SponsorDialog({
       setStart(editingSponsor.activePeriod.start);
       setEnd(editingSponsor.activePeriod.end);
       setSelectedCountries(
-        editingSponsor.countries.map((c: any) => c.country_id)
+        editingSponsor.countries.map((c: any) => c.country_id),
       );
       setLogoPreview(editingSponsor.logo || "");
     }
@@ -74,8 +72,6 @@ export default function SponsorDialog({
     setWebsite("");
     setStart("");
     setEnd("");
-    setCountriesDraft([]);
-    setCountryInput("");
     setLogoFile(null);
     setLogoPreview("");
     if (fileRef.current) fileRef.current.value = "";
@@ -197,18 +193,23 @@ export default function SponsorDialog({
 
           {/* Countries */}
           <div className="space-y-2">
-            <Label>Countries</Label>
-            <MultiSelect
-              value={selectedCountries}
-              onChange={setSelectedCountries}
-              placeholder="Select countries"
-              options={
-                countries.map((c) => ({
-                  label: c.name,
-                  value: c.id,
-                })) as any
-              }
-            />
+            <Label>Country</Label>
+            <Select
+              value={selectedCountries[0]?.toString() ?? ""}
+              onValueChange={(v) => setSelectedCountries([parseInt(v)])}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {countries.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

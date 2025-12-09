@@ -24,3 +24,15 @@ export async function updateApprovalStatus(payload: any) {
     headers: headers
   });
 }
+
+export async function getAllScripts() {
+  const url = base + "script-generation/all";
+  const response = await fetch(url, {
+    method: "GET",
+    headers: headers
+  });
+  if(!response.ok || response.status !== 200) {
+    throw new Error("Error while getting saved countries")
+  }
+  return response.json();
+}
